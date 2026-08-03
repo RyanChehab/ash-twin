@@ -1,0 +1,25 @@
+{
+  "name": "cca",
+  "env": "staging",
+
+  "baseUrl": "https://staging.coca-cola-arena.com",
+  "webUrl":  "https://staging.coca-cola-arena.com",
+
+  "currency": "AED",
+  "locale": "en",
+
+  "users": {
+    "superadmin": {
+      "username": "${CCA_STAGING_SUPERADMIN_USER}",
+      "password": "${CCA_STAGING_SUPERADMIN_PASSWORD}"
+    }
+  },
+
+  "db": {
+    "host":     "${CCA_STAGING_DB_HOST}",
+    "port":     "${CCA_STAGING_DB_PORT}",
+    "user":     "${CCA_STAGING_DB_USER}",
+    "password": "${CCA_STAGING_DB_PASSWORD}",
+    "database": "${CCA_STAGING_DB_NAME}"
+  }
+}
