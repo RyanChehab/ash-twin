@@ -1,11 +1,23 @@
 import type { Page } from '@playwright/test';
 import type { TenantConfig } from '../types/tenant';
-import type { BuyTicketPayload } from '../types/payloads';
-import type { EventRef, TicketRef } from '../types/references';
+import type { Event } from '../types/event';
+import type { Ticket } from '../types/ticket';
+import type { SeatRef } from '../types/seat';
 import { WebEventDetailPage } from '../pages/web/web-event-detail-page';
 import { WebCheckoutPage } from '../pages/web/web-checkout-page';
 import { WebConfirmationPage } from '../pages/web/web-confirmation-page';
-import { unique } from '../helpers/unique';
+
+/**
+ * Action input for Customer.buyTicket().
+ * Provide exactly one of `quantity` (for GA categories) or `seats` (for seated).
+ */
+export interface BuyTicketInput {
+  eventId: number;
+  categoryId: number;
+  userId: number;
+  quantity?: number;
+  seats?: SeatRef[];
+}
 
 export class Customer {
   constructor(
@@ -13,32 +25,26 @@ export class Customer {
     private tenant: TenantConfig,
   ) {}
 
-  async openEvent(event: EventRef) {
+  async openEvent(event: Pick<Event, 'id'>) {
     const detail = new WebEventDetailPage(this.page);
     await detail.open(event.id);
   }
 
-  /**
-   * High-level customer purchase flow. Drives event detail → checkout → confirmation.
-   * Payload requires eventId + categoryId + userId, and exactly one of quantity | seats
-   * depending on whether the category is GA or seated.
-   */
-  async buyTicket(payload: BuyTicketPayload): Promise<TicketRef> {
-    // Validate exactly one of quantity | seats
-    const hasQty  = payload.quantity !== undefined;
-    const hasSeat = payload.seats !== undefined && payload.seats.length > 0;
+  async buyTicket(input: BuyTicketInput): Promise<Ticket> {
+    const hasQty  = input.quantity !== undefined;
+    const hasSeat = input.seats !== undefined && input.seats.length > 0;
     if (hasQty === hasSeat) {
-      throw new Error('buyTicket: provide exactly one of `quantity` (for GA) or `seats` (for seated)');
+      throw new Error('buyTicket: provide exactly one of `quantity` (GA) or `seats` (seated)');
     }
 
     const detail = new WebEventDetailPage(this.page);
-    await detail.open(payload.eventId);
+    await detail.open(input.eventId);
 
-    // TODO: pick the specific category by payload.categoryId (page object needs a selectCategory method)
-    // TODO: authenticate as payload.userId (either via storage-state per user, or a login step)
-    // TODO: for seated → drive seatmap picker to select payload.seats
+    // TODO: pick the specific category by input.categoryId
+    // TODO: authenticate as input.userId
+    // TODO: for seated → drive seatmap picker to select input.seats
 
-    if (hasQty) await detail.setQuantity(payload.quantity!);
+    if (hasQty) await detail.setQuantity(input.quantity!);
     await detail.clickBuy();
 
     const checkout = new WebCheckoutPage(this.page);
@@ -49,9 +55,9 @@ export class Customer {
     const orderRef = await confirmation.orderRef();
 
     return {
-      orderRef: (orderRef ?? unique.orderRef()).trim(),
+      orderRef: (orderRef ?? `T${Date.now()}`).trim(),
       status: visible ? 'paid' : 'unknown',
-      eventId: payload.eventId,
+      eventId: input.eventId,
     };
   }
 }
