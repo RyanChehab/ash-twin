@@ -1,22 +1,33 @@
-export type CategoryType = 'GA' | 'seated';
-
 /**
- * SquareMaze Category — a ticket tier belonging to an Event.
- * Always references its parent via eventId (FK).
+ * SquareMaze Category — a ticket tier belonging to an Event, scoped to a placemap.
+ * Backing table: `category` (prefix `category_`), model class `PlaceMapCategory`.
+ *
+ * `numbering` distinguishes GA from seated variants:
+ *   - 'none' → general admission (no assigned seats)
+ *   - 'both' | 'rows' | 'seat' → seated (varying label formats)
+ *
+ * `isSeated` is a derived boolean the resolver computes from `numbering`.
  */
+
+export type CategoryNumbering = 'none' | 'both' | 'rows' | 'seat';
+export type CategoryMode      = 'ticket' | 'pass';
+export type CategoryPubStatus = 0 | 1 | 2;  // unpublished | published | unavailable
+
 export interface Category {
   id: number;
   eventId: number;
-  name: string;
-  type: CategoryType;
-  price?: number;
-  capacity?: number | null;
-  data?: Record<string, unknown>;
-}
 
-/** Filter passed to admin.findCategory / resolver.category. */
-export interface FindCategoryCriteria {
-  eventId?: number;
-  type?: CategoryType;
-  hasCapacity?: boolean;
+  name: string;
+  price?: number;
+  size?: number;                    // total capacity
+  free?: number;                    // currently available
+
+  numbering?: CategoryNumbering;
+  isSeated?: boolean;               // derived: numbering !== 'none'
+  mode?: CategoryMode;
+
+  webStatus?: CategoryPubStatus;
+  posStatus?: CategoryPubStatus;
+
+  data?: Record<string, unknown>;
 }
