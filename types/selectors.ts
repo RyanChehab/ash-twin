@@ -1,19 +1,10 @@
-import type { Event, FindEventCriteria } from './event';
-
-/**
- * The vocabulary of intent shortcuts a test can use to pick an event
- * without knowing its id or name.
- */
-export type EventDescriptor =
-  | 'first-upcoming'
-  | 'any-published-with-capacity'
-  | { criteria: FindEventCriteria };
+import type { Event } from './event';
 
 /**
  * How a test specifies which event it wants to act on.
- * The Resolver accepts any of these three shapes and normalizes to an identifier.
+ * The Resolver accepts any of these shapes and normalizes to a full Event.
  */
 export type EventSelector =
   | string          // by exact name — 'Coldplay Live at CCA'
-  | EventDescriptor // by intent    — 'first-upcoming'
-  | Event;          // by full ref  — object from a prior call
+  | number          // by id         — 42
+  | Event;          // by full ref   — object from a prior call

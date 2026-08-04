@@ -7,15 +7,28 @@ export interface Event {
   id: number;
   title: string;
   status?: 'published' | 'paused' | 'draft';
-  capacity?: number | null;
-  isSeated?: boolean;
   date?: string | null;
   data?: Record<string, unknown>;
 }
 
-/** Filter passed to admin.findEvent / resolver.event. */
+/**
+ * Filter passed to admin.findEvent / resolver.event.
+ * Each key is one dimension; combine freely. Adding a new dimension =
+ * add a key here + one SQL fragment in Resolver.event.
+ */
 export interface FindEventCriteria {
-  status?: 'published' | 'draft';
+  // Direct-lookup shortcuts
+  id?: number;
+  name?: string;
+
+  // Event's own fields
+  status?: 'published' | 'paused' | 'draft';
   isSeated?: boolean;
   hasCapacity?: boolean;
+
+  // Cross-table dimensions grow here later:
+  //   hasCategory?: { type?: CategoryType; hasCapacity?: boolean };
+  //   hasDiscount?: boolean | { type?: string; active?: boolean };
+  //   hasVoucher?:  boolean | { type?: string };
+  //   hasPluginEnabled?: string;
 }
