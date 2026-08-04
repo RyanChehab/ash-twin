@@ -2,10 +2,10 @@ import mysql, { Pool, RowDataPacket } from 'mysql2/promise';
 import type { TenantDb } from '../types/tenant';
 
 /**
- * Thin wrapper around mysql2 pool for the tenant's DB.
- * Used by fixtures/db, actors, and helpers/event-finder for reads AND writes.
- * Writes should only happen from the state fixture (per-test enforce)
- * or from cleanup teardown — never inline in tests.
+ * Thin wrapper around a mysql2 connection pool for one tenant's DB.
+ * The mysql2-specific types (RowDataPacket) stay internal — callers pass
+ * plain object interfaces as the generic T. Reads and writes only,
+ * writes should originate from the state fixture or cleanup teardown.
  */
 export class DbClient {
   private pool: Pool;
@@ -23,12 +23,12 @@ export class DbClient {
     });
   }
 
-  async query<T extends RowDataPacket = RowDataPacket>(sql: string, params: unknown[] = []): Promise<T[]> {
-    const [rows] = await this.pool.query<T[]>(sql, params);
-    return rows;
+  async query<T extends object = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+    const [rows] = await this.pool.query<(T & RowDataPacket)[]>(sql, params);
+    return rows as T[];
   }
 
-  async one<T extends RowDataPacket = RowDataPacket>(sql: string, params: unknown[] = []): Promise<T | null> {
+  async one<T extends object = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T | null> {
     const rows = await this.query<T>(sql, params);
     return rows[0] ?? null;
   }
