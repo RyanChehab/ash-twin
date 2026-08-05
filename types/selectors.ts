@@ -1,10 +1,13 @@
-import type { Event } from './event';
+import type { Event, EventCriteria } from './event';
+import type { Category, CategoryCriteria } from './category';
 
-/**
- * How a test specifies which event it wants to act on.
- * The Resolver accepts any of these shapes and normalizes to a full Event.
- */
 export type EventSelector =
-  | string          // by exact name — 'Coldplay Live at CCA'
-  | number          // by id         — 42
-  | Event;          // by full ref   — object from a prior call
+  | number
+  | string
+  | Event
+  | EventCriteria;
+
+export type CategorySelector =
+  | number
+  | Category
+  | CategoryCriteria;
