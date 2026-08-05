@@ -38,8 +38,8 @@ export class EventPage extends BasePage {
     await this.quantityDec.click();
   }
 
-  async addToCart(): Promise<void> {
-    await this.addToCartButtons.first().click();
+  async addToCart(categoryId: number): Promise<void> {
+    await this.page.locator(`#li_${categoryId} .mini_add_to_cart`).click();
     await this.waitReady();
   }
 
