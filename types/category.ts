@@ -31,3 +31,18 @@ export interface Category {
 
   data?: Record<string, unknown>;
 }
+
+export interface CategoryCriteria {
+  eventId?: number;
+  name?: string;
+  numbering?: CategoryNumbering | 'seated';
+  soldout?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  mode?: CategoryMode;
+
+  webPublished?: boolean;
+  posPublished?: boolean;
+  b2bPublished?: boolean;
+
+}
