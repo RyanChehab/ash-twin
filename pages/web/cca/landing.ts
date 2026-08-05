@@ -18,11 +18,6 @@ export class LandingPage extends BasePage {
     return await this.eventCards.count();
   }
 
-  async openEventById(id: number): Promise<void> {
-    await this.page.goto(`/event/${id}`);
-    await this.waitReady();
-  }
-
   async clickEventByTitle(title: string): Promise<void> {
     const card = this.eventCards.filter({ hasText: title }).first();
     await card.click();

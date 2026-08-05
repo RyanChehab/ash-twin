@@ -1,6 +1,5 @@
 import type { LandingPage } from './cca/landing';
 import type { EventPage } from './cca/event';
-import type { CartPage } from './cca/cart';
 import type { CheckoutPage } from './cca/checkout';
 import type { ConfirmationPage } from './cca/confirmation';
 
@@ -15,7 +14,6 @@ import type { ConfirmationPage } from './cca/confirmation';
 export interface WebPages {
   landing:      LandingPage;
   event:        EventPage;
-  cart:         CartPage;
   checkout:     CheckoutPage;
   confirmation: ConfirmationPage;
 }
