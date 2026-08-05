@@ -1,17 +1,16 @@
-import type { LandingPage } from './landing';
-import type { EventPage } from './event';
-import type { CartPage } from './cart';
-import type { CheckoutPage } from './checkout';
-import type { ConfirmationPage } from './confirmation';
+import type { LandingPage } from './cca/landing';
+import type { EventPage } from './cca/event';
+import type { CartPage } from './cca/cart';
+import type { CheckoutPage } from './cca/checkout';
+import type { ConfirmationPage } from './cca/confirmation';
 
 /**
- * The set of customer-facing page objects every tenant must provide.
- * Tests never construct these directly — the factory hands the bundle to
- * the Customer actor at construction time.
+ * Contract for the customer-facing page objects the Customer actor drives.
+ * Every tenant's page bundle satisfies this shape. Tenant-specific extensions
+ * (AntoineWebPages, VirginWebPages, etc.) add extra pages beyond this base.
  *
- * Tenant-specific extensions (AntoineWebPages, VirginWebPages) will be added
- * here when we onboard those Next.js frontends, each declaring extra pages
- * beyond the shared base surface.
+ * Type references point at cca implementations because those are the canonical
+ * shape — other tenant classes extend the same base concepts.
  */
 export interface WebPages {
   landing:      LandingPage;
