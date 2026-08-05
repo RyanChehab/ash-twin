@@ -2,12 +2,12 @@ import { test as base, type Page } from '@playwright/test';
 import type { TenantConfig } from '../types/tenant';
 import { DbClient } from '../helpers/db-client';
 import { Admin } from '../actors/admin';
-import { Customer } from '../actors/customer';
+import { WebCustomer } from '../actors/web-customer';
 
 export const actorsFixtures = base.extend<{
   db: DbClient;
   admin: Admin;
-  customer: Customer;
+  customer: WebCustomer;
 }, {
   tenant: TenantConfig;
   adminPage: Page;
@@ -24,6 +24,6 @@ export const actorsFixtures = base.extend<{
   },
 
   customer: async ({ customerPage, tenant }, use) => {
-    await use(new Customer(customerPage, tenant));
+    await use(new WebCustomer(customerPage, tenant));
   },
 });
