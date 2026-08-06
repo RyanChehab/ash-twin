@@ -9,12 +9,17 @@ import type { Event } from '../../../types/event';
 export class EventPage extends BasePage {
   readonly categoryList:     Locator = this.page.locator('#list.rd');
   readonly categoryRadios:   Locator = this.page.locator('input[name="category_id"]');
-  readonly quantityInput:    Locator = this.page.locator('.quantity-picker input[type="tel"]');
-  readonly quantityInc:      Locator = this.page.locator('.quantity-picker .inc');
-  readonly quantityDec:      Locator = this.page.locator('.quantity-picker .dec');
   readonly addToCartButtons: Locator = this.page.locator('.mini_add_to_cart');
   readonly seatMapTrigger:   Locator = this.page.locator('.js-openSeatMap');
   readonly checkoutButton:   Locator = this.page.locator('#checkoutBtn');
+
+  // Per-category controls — one .quantity-picker per <li id="li_{catId}">.
+  quantityInc(categoryId: number): Locator {
+    return this.page.locator(`#li_${categoryId} .quantity-picker .inc`);
+  }
+  quantityDec(categoryId: number): Locator {
+    return this.page.locator(`#li_${categoryId} .quantity-picker .dec`);
+  }
 
   buildPath(event: Pick<Event, 'id' | 'type'>): string {
     if (!event.type) throw new Error(`Event ${event.id} has no type — cannot build URL`);
@@ -24,29 +29,65 @@ export class EventPage extends BasePage {
   async open(event: Pick<Event, 'id' | 'type'>): Promise<void> {
     await this.page.goto(this.buildPath(event));
     await this.waitReady();
+    await this.dismissNotice();
+  }
+
+  /**
+   * Two flavours of fancybox may pop on page load:
+   *   - `#popup` — the event-level notice, triggered by `showConfirm()` from
+   *     init.js when `event_notice_popup = 1` on the event.
+   *   - venue/category info fancyboxes (e.g. "Family Package", "Rates for
+   *     mates") that intercept pointer events on the categories.
+   *
+   * Both are dismissed by clicking a button whose href calls
+   * `$.fancybox.close()`. We wait briefly for either to appear so we don't
+   * race the popup opening.
+   */
+  async dismissNotice(): Promise<void> {
+    const closer = this.page.locator(
+      '#popup .btns a, .fancybox-wrap.fancybox-opened a[href*="fancybox.close"], .fancybox-wrap.fancybox-opened .fancybox-close',
+    ).first();
+    try {
+      await closer.waitFor({ state: 'visible', timeout: 1500 });
+      await closer.click();
+    } catch {
+      /* no popup on this event — nothing to do */
+    }
   }
 
   async pickCategory(categoryId: number): Promise<void> {
-    await this.page
-      .locator(`input[name="category_id"][value="${categoryId}"]`)
-      .check();
+    // Radios carry class="radioform" and are visually hidden — the visible
+    // <header id="{categoryId}"> above them is the human click target.
+    await this.page.locator(`#li_${categoryId} header`).first().click();
   }
 
-  async setQuantity(n: number): Promise<void> {
-    await this.quantityInput.fill(String(n));
-  }
-
-  async incrementQuantity(): Promise<void> {
-    await this.quantityInc.click();
-  }
-
-  async decrementQuantity(): Promise<void> {
-    await this.quantityDec.click();
+  /**
+   * Set quantity by clicking `+` n times. The <input> is `disabled` — the UI
+   * gates users through the increment/decrement buttons which fire the JS
+   * that toggles the "add to cart" button between disabled and enabled.
+   */
+  async setQuantity(categoryId: number, n: number): Promise<void> {
+    const inc = this.quantityInc(categoryId);
+    for (let i = 0; i < n; i++) await inc.click();
   }
 
   async addToCart(categoryId: number): Promise<void> {
     await this.page.locator(`#li_${categoryId} .mini_add_to_cart`).click();
-    await this.waitReady();
+    // Cart is added via AJAX; the sticky checkout button un-hides on success.
+    await this.checkoutButton.waitFor({ state: 'visible', timeout: 10_000 });
+  }
+
+  /**
+   * Check any required event-level agreement boxes (T&C, age restrictions).
+   * Both are gated by `event_terms` / `event_age_restrictions` on the event —
+   * hidden entirely when unset, so this method is a no-op for those events.
+   */
+  async acceptTerms(): Promise<void> {
+    const boxes = this.page.locator(
+      '#terms input[name="event_terms"], #terms input[name="event_age_restrictions"]',
+    );
+    const n = await boxes.count();
+    for (let i = 0; i < n; i++) await boxes.nth(i).check({ force: true });
   }
 
   async proceedToCheckout(): Promise<void> {
