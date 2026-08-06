@@ -1,6 +1,35 @@
-import { test as base, type Page } from '@playwright/test';
+import { test as base, type BrowserContext, type Page } from '@playwright/test';
 import type { TenantConfig } from '../types/tenant';
 import { AdminLoginPage } from '../pages/admin/admin-login-page';
+
+/** Extract hostname from a URL for cookie domain assignment. */
+function hostOf(url: string): string {
+  return new URL(url).hostname;
+}
+
+/**
+ * Suppress the cookieconsent banner on the given context by pre-setting its
+ * dismissal cookie. Safe to call even for tenants without the banner —
+ * unused cookies are harmless.
+ */
+async function suppressCookieBanner(ctx: BrowserContext, tenant: TenantConfig): Promise<void> {
+  await ctx.addCookies([
+    {
+      name:   'cookieconsent_status',
+      value:  'dismiss',
+      domain: hostOf(tenant.webUrl),
+      path:   '/',
+      expires: Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
+    },
+    {
+      name:   'cookieconsent_status',
+      value:  'dismiss',
+      domain: hostOf(tenant.baseUrl),
+      path:   '/',
+      expires: Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
+    },
+  ]);
+}
 
 /**
  * Provides logged-in browser tabs per role.
@@ -12,6 +41,7 @@ export const authFixtures = base.extend<{
 }, { tenant: TenantConfig }>({
   adminPage: async ({ browser, tenant }, use) => {
     const ctx = await browser.newContext({ baseURL: tenant.baseUrl, ignoreHTTPSErrors: true });
+    await suppressCookieBanner(ctx, tenant);
     const page = await ctx.newPage();
     const login = new AdminLoginPage(page);
     await login.open();
@@ -24,6 +54,7 @@ export const authFixtures = base.extend<{
 
   customerPage: async ({ browser, tenant }, use) => {
     const ctx = await browser.newContext({ baseURL: tenant.webUrl, ignoreHTTPSErrors: true });
+    await suppressCookieBanner(ctx, tenant);
     const page = await ctx.newPage();
     await use(page);
     await ctx.close();
