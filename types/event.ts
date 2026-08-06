@@ -10,6 +10,8 @@ import type { CategoryCriteria } from './category';
  */
 export type EventRep = 'unique' | 'main' | 'sub';
 
+export type EventModel = 'event' | 'seasonpass' | 'voucher' | 'product' | 'ebook';
+
 /**
  * SquareMaze Event — the domain model.
  * All fields optional beyond id + title; the rest come from the DB or default server-side.
@@ -20,18 +22,18 @@ export interface Event {
   title: string;
   type?: string;                        // event_type — 'music' / 'sports' / 'comedy' / 'festival' / ...
   status?: 'pub' | 'unpub' | 'nosal' | 'trash';
-  date?: string | null;                 // event_date (YYYY-MM-DD)
-  time?: string | null;                 // event_time (HH:MM:SS)
+  date?: string | null;                 
+  time?: string | null;                 
   rep?: EventRep;
+  model?: EventModel;
   mainId?: number | null;               // populated for sub events only
   data?: Record<string, unknown>;
 }
 
 export interface EventCriteria {
   status?: 'pub' | 'unpub' | 'nosal' | 'trash';
-
-
   rep?: EventRep | 'main-or-unique' | 'sub-or-unique';
+  model?: EventModel;
 
   hasCategory?: CategoryCriteria;
 }
