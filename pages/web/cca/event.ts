@@ -1,6 +1,11 @@
 import type { Locator } from '@playwright/test';
 import { BasePage } from '../base';
+import type { Event } from '../../../types/event';
 
+/**
+ * Event detail page. Canonical URL is `/{event_type}/{event_id}/{slug}`.
+ * We omit the slug (SquareMaze accepts URLs without it).
+ */
 export class EventPage extends BasePage {
   readonly categoryList:     Locator = this.page.locator('#list.rd');
   readonly categoryRadios:   Locator = this.page.locator('input[name="category_id"]');
@@ -11,12 +16,13 @@ export class EventPage extends BasePage {
   readonly seatMapTrigger:   Locator = this.page.locator('.js-openSeatMap');
   readonly checkoutButton:   Locator = this.page.locator('#checkoutBtn');
 
-  buildPath(id: number): string {
-    return `/event/${id}`;
+  buildPath(event: Pick<Event, 'id' | 'type'>): string {
+    if (!event.type) throw new Error(`Event ${event.id} has no type — cannot build URL`);
+    return `/${event.type}/${event.id}`;
   }
 
-  async open(eventId: number): Promise<void> {
-    await this.page.goto(this.buildPath(eventId));
+  async open(event: Pick<Event, 'id' | 'type'>): Promise<void> {
+    await this.page.goto(this.buildPath(event));
     await this.waitReady();
   }
 
