@@ -64,9 +64,23 @@ Format: `/{type}/{id}[/{slug}]` where `type` is `event.event_type` (`music`, `sp
 
 ## The `event` table holds more than events
 
-Products (F&B combos, merchandise) and other non-performance rows live in the same `event` table with `event_type = NULL`. They have `event_status = 'pub'` and can have categories too — so a naive query "give me any published event with a category" can hit a burger combo instead of a concert.
+The `event` table is overloaded. `event_model` classifies the row:
 
-**Rule**: any criteria-based event lookup must require `event_type IS NOT NULL AND event_type != ''`. The Resolver adds this automatically for every criteria query. Direct id / name lookups (`resolver.event(42)`) skip the filter — if the caller says "give me row 42," they get row 42.
+| `event_model` | What it is |
+|---|---|
+| `'event'`      | Real event (concert, match, festival, ...) |
+| `'seasonpass'` | Season pass / subscription |
+| `'voucher'`    | Prepaid voucher |
+| `'product'`    | F&B combo, merchandise, add-on |
+| `'ebook'`      | Digital publication |
+
+Products in particular have `event_type = NULL`, `event_status = 'pub'`, and can carry categories too — so a naive "give me any published event with a category" query hits a burger combo instead of a concert.
+
+**Rules the Resolver enforces on every criteria query**:
+1. `event_model = ?` — defaults to `'event'`; callers targeting other kinds must set `model:` explicitly.
+2. `event_type IS NOT NULL AND event_type != ''` — safety net for URL building (real events always have a type).
+
+Direct id / name lookups (`resolver.event(42)`) skip these filters — if the caller says "give me row 42," they get row 42.
 
 ## The date picker doesn't navigate
 
