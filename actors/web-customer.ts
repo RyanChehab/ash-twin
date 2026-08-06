@@ -78,12 +78,20 @@ export class WebCustomer {
     await this.pages.event.pickCategory(category.id);
   }
 
-  async setQuantity(n: number): Promise<void> {
-    await this.pages.event.setQuantity(n);
+  async setQuantity(category: Category, n: number): Promise<void> {
+    await this.pages.event.setQuantity(category.id, n);
   }
 
   async addToCart(category: Category): Promise<void> {
     await this.pages.event.addToCart(category.id);
+  }
+
+  async acceptTerms(): Promise<void> {
+    await this.pages.event.acceptTerms();
+  }
+
+  async isCheckoutReady(): Promise<boolean> {
+    return this.pages.event.checkoutButton.isVisible();
   }
 
   async proceedToCheckout(): Promise<void> {
@@ -112,7 +120,8 @@ export class WebCustomer {
   async buyTicket(event: Event, category: Category, quantity: number, userInfo?: CheckoutUserInfo): Promise<Ticket> {
     await this.openEvent(event);
     await this.pickCategory(category);
-    await this.setQuantity(quantity);
+    await this.setQuantity(category, quantity);
+    await this.acceptTerms();
     await this.addToCart(category);
     await this.proceedToCheckout();
     if (userInfo) await this.fillCheckout(userInfo);
