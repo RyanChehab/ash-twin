@@ -51,10 +51,12 @@ Small, composable methods. Each does ONE thing:
 
 ```ts
 customer.openLanding()
-customer.openEvent(event)
+customer.openEvent(event)          // sub → main URL + pickDate; unique → direct; main → next-sub fallback
 customer.pickCategory(category)
-customer.setQuantity(3)
+customer.setQuantity(category, 3)  // category-scoped: clicks that category's + button 3 times
+customer.acceptTerms()             // no-op if the event has no terms / age gate
 customer.addToCart(category)
+customer.isCheckoutReady()         // read: checkout button visible (proxy for successful add)
 customer.proceedToCheckout()
 customer.fillCheckout({ email, phone })
 customer.submitCheckout()
@@ -67,7 +69,8 @@ Composite methods exist as **explicit wrappers**:
 async buyTicket(event, category, quantity, userInfo?) {
   await this.openEvent(event);
   await this.pickCategory(category);
-  await this.setQuantity(quantity);
+  await this.setQuantity(category, quantity);
+  await this.acceptTerms();
   await this.addToCart(category);
   await this.proceedToCheckout();
   if (userInfo) await this.fillCheckout(userInfo);

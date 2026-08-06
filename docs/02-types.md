@@ -6,7 +6,7 @@ The `types/` folder holds SquareMaze **domain shapes** — the vocabulary tests 
 
 | File | Contains | Purpose |
 |---|---|---|
-| `event.ts` | `Event`, `EventCriteria` | An event and how to filter for one |
+| `event.ts` | `Event`, `EventCriteria`, `EventRep`, `EventModel` | An event and how to filter for one |
 | `category.ts` | `Category`, `CategoryCriteria`, `CategoryNumbering`, `CategoryMode`, `CategoryPubStatus` | A category (ticket tier) and how to filter |
 | `ticket.ts` | `Ticket` | A purchased ticket returned from checkout |
 | `seat.ts` | `SeatRef` | A seated-category seat reference |

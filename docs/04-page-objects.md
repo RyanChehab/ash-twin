@@ -97,3 +97,30 @@ Everything else inherits. Add branch to factory.
 - **Avoid**: nth-child, sibling traversal, DOM hierarchy assumptions
 - **One source of truth**: every selector lives in exactly one page-object file
 - **No business logic** in page objects — that's the actor's job
+
+## Gotchas learned from the CCA event page
+
+Real DOM discoveries worth documenting so the next author doesn't retrace them:
+
+### Radios and quantity inputs are CSS-hidden
+
+Category radios carry `class="radioform"` and are visually hidden. Playwright's `.check()` requires visibility, so we click the visible `<header id="{categoryId}">` above the radio — that's the actual human click target and it toggles the radio via JS.
+
+Quantity inputs are `disabled` — humans can't type into them. Use the `.inc` / `.dec` buttons scoped to the category (`#li_{catId} .quantity-picker .inc`) and click `n` times to reach the target quantity. The buttons also fire the JS that toggles `.mini_add_to_cart` between disabled/enabled — typing into the input directly (even via `.evaluate()`) skips that.
+
+### Add-to-cart is AJAX; watch DOM, not URL
+
+Clicking `.mini_add_to_cart` fires an AJAX POST — no navigation. The success signal we currently watch is `#checkoutBtn` becoming visible (its parent `#btns` has the `hidden` class removed on successful add). This is a **proxy signal**: it works but is prone to false positives if the cart already had items from a prior step. When we need certainty, layer a `page.waitForResponse(...)` around the click, or query the cart after.
+
+### Two page-load popups to dismiss
+
+Both are fancybox modals that intercept pointer events on the categories:
+
+1. **`#popup`** — the event-level notice. Rendered when `event_notice != ""`, and *opened automatically* when `event_notice_popup = 1`. `showConfirm()` in `public/default/js/init.js` triggers it on `ready` via `checkPageLevelEventNotice()`. Dismissed by `#popup .btns a` (whose `href` calls `$.fancybox.close()`).
+2. **Venue / category info fancyboxes** — e.g. "Family Package", "Rates for mates". Same close pattern: `.fancybox-wrap.fancybox-opened a[href*="fancybox.close"]` or `.fancybox-close`.
+
+`EventPage.dismissNotice()` waits briefly for either and clicks its close/OK anchor; no-op if neither surfaces. Called automatically from `EventPage.open()`.
+
+### Terms and age-restriction checkboxes
+
+When the event has `event_terms` or `event_age_restrictions > 0`, `.mini_add_to_cart` refuses to fire until both boxes are checked. See `event_terms.tpl` — checkboxes are `input[name="event_terms"]` and `input[name="event_age_restrictions"]` inside `#terms`. `EventPage.acceptTerms()` force-checks both (radios/checkboxes may be CSS-hidden). Safe no-op when the event has neither.

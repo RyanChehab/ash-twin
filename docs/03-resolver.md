@@ -32,10 +32,25 @@ Accepts:
 
 Both return the full domain object (`Event` / `Category`), or **throw** if nothing matches.
 
+## Always-on filters (criteria queries only)
+
+Any `EventCriteria` query enforces these implicitly. Direct id / name lookups (`resolver.event(42)` / `resolver.event("CHICAGO")`) skip them — if the caller asks for row 42, they get row 42.
+
+| Filter | Why |
+|---|---|
+| `event_model = 'event'` | The `event` table is overloaded — also holds season passes, vouchers, F&B products, ebooks. Override via `model:` in the criteria. |
+| `event_type IS NOT NULL AND != ''` | Real events always have a type (used to build the URL). Products/vouchers don't. |
+| `event_webshop = 1` | Only rows listed for sale on the storefront. |
+| `event_view_begin < NOW()` and `event_view_end > NOW()` | Inside the configured view window. NULL either side = open-ended. |
+| `event_date >= CURDATE()` | Not yet past. NULL date is fine (evergreen). |
+| Parent-viewable | For subs (`event_main_id NOT NULL`), the parent main must itself be pub + webshop=1 + inside its view window. Prevents returning a pub sub whose unpub main renders an empty page. |
+
 ## Criteria dimensions supported
 
 ### EventCriteria
-- `status` — 'published' | 'paused' | 'draft'
+- `status` — `'pub' \| 'unpub' \| 'nosal' \| 'trash'` (SquareMaze short-forms, see `docs/08`)
+- `rep` — `'unique' \| 'main' \| 'sub' \| 'main-or-unique' \| 'sub-or-unique'`. Default depends on `hasCategory`: set → `'sub-or-unique'` (categories only live on those); unset → `'main-or-unique'` (landing-visible rows).
+- `model` — `EventModel`. Defaults to `'event'`. Set explicitly to target `'seasonpass'` / `'voucher'` / `'product'` / `'ebook'`.
 - `hasCategory` — a nested `CategoryCriteria` (becomes an EXISTS subquery)
 
 ### CategoryCriteria
