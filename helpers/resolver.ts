@@ -1,8 +1,22 @@
 import type { DbClient } from './db-client';
-import type { Event, EventCriteria } from '../types/event';
+import type { Event, EventCriteria, EventRep } from '../types/event';
 import type { Category, CategoryCriteria } from '../types/category';
 import type { EventSelector, CategorySelector } from '../types/selectors';
 
+// ── DB ↔ domain rep value mapping ──────────────────────────────────────────
+// SquareMaze stores 'main,sub' for standalone (unique) events. We alias to
+// 'unique' in the domain type for clarity.
+const REP_DB_UNIQUE = 'main,sub';
+
+function repToDb(rep: EventRep): string {
+  return rep === 'unique' ? REP_DB_UNIQUE : rep;
+}
+
+function repFromDb(v: string | null | undefined): EventRep | undefined {
+  if (v === REP_DB_UNIQUE) return 'unique';
+  if (v === 'main' || v === 'sub') return v;
+  return undefined;
+}
 
 export class Resolver {
   constructor(private db: DbClient) {}
@@ -19,8 +33,8 @@ export class Resolver {
     } else if (typeof selector === 'object' && 'id' in selector && 'title' in selector) {
       row = await this.queryEvent('e.id = ?', [selector.id]);
     } else if (typeof selector === 'object') {
-      const { where, params } = this.buildEventCriteriaWhere(selector as EventCriteria);
-      row = await this.queryEvent(where, params);
+      const { where, params, orderBy } = this.buildEventCriteriaWhere(selector as EventCriteria);
+      row = await this.queryEvent(where, params, orderBy);
     } else {
       throw new Error(`Unrecognized event selector: ${JSON.stringify(selector)}`);
     }
@@ -29,24 +43,78 @@ export class Resolver {
     return row;
   }
 
-  private async queryEvent(where: string, params: unknown[]): Promise<Event | null> {
+  /**
+   * Given a main event id, return the next upcoming sub (earliest date >= today).
+   * Used by WebCustomer as a fallback when the actor gets a main event with no
+   * matching-sub context (e.g. a criteria-less lookup that returned a main).
+   */
+  async nextSub(mainId: number): Promise<Event> {
     const sql = `
       SELECT
-        e.id         AS id,
-        e.event_name AS title,
-        e.status     AS status,
-        e.event_date AS date
+        e.id            AS id,
+        e.event_name    AS title,
+        e.status        AS status,
+        e.event_date    AS date,
+        e.event_time    AS time,
+        e.event_rep     AS rep,
+        e.event_main_id AS mainId
       FROM events e
-      ${where ? 'WHERE ' + where : ''}
-      ORDER BY e.id DESC
+      WHERE e.event_main_id = ?
+        AND e.event_date >= CURDATE()
+      ORDER BY e.event_date ASC, e.event_time ASC
       LIMIT 1
     `;
-    return await this.db.one<Event>(sql, params);
+    const row = await this.db.one<Event>(sql, [mainId]);
+    if (!row) throw new Error(`No upcoming sub events for main ${mainId}`);
+    return this.hydrateEventRow(row);
   }
 
-  private buildEventCriteriaWhere(c: EventCriteria): { where: string; params: unknown[] } {
+  private async queryEvent(
+    where: string,
+    params: unknown[],
+    orderBy: string = 'e.id DESC',
+  ): Promise<Event | null> {
+    const sql = `
+      SELECT
+        e.id            AS id,
+        e.event_name    AS title,
+        e.status        AS status,
+        e.event_date    AS date,
+        e.event_time    AS time,
+        e.event_rep     AS rep,
+        e.event_main_id AS mainId
+      FROM events e
+      ${where ? 'WHERE ' + where : ''}
+      ORDER BY ${orderBy}
+      LIMIT 1
+    `;
+    const row = await this.db.one<Event>(sql, params);
+    return row ? this.hydrateEventRow(row) : null;
+  }
+
+  /** Translate DB rep value 'main,sub' → 'unique' after read. */
+  private hydrateEventRow(row: Event): Event {
+    return { ...row, rep: repFromDb(row.rep as unknown as string) };
+  }
+
+  private buildEventCriteriaWhere(
+    c: EventCriteria,
+  ): { where: string; params: unknown[]; orderBy: string } {
     const parts: string[] = [];
     const params: unknown[] = [];
+
+    // Rep filter: pick a context-aware default
+    const rep = c.rep ?? (c.hasCategory ? 'sub-or-unique' : 'main-or-unique');
+    if (rep === 'main-or-unique') {
+      parts.push(`e.event_rep IN ('main', ?)`);
+      params.push(REP_DB_UNIQUE);
+    } else if (rep === 'sub-or-unique') {
+      parts.push(`e.event_rep IN ('sub', ?)`);
+      params.push(REP_DB_UNIQUE);
+    } else {
+      parts.push('e.event_rep = ?');
+      params.push(repToDb(rep));
+    }
 
     if (c.status) {
       parts.push('e.status = ?');
@@ -54,18 +122,32 @@ export class Resolver {
     }
 
     if (c.hasCategory) {
-      const { sql, params: p } = this.buildCategoryExists(c.hasCategory);
+      const { sql, params: p } = this.buildCategoryExistsForEvent(c.hasCategory);
       parts.push(sql);
       params.push(...p);
     }
 
-    return { where: parts.join(' AND '), params };
+    // When targeting subs (which have real dates), skip past events and prefer
+    // the closest upcoming performance. Uniques with dates get the same treatment.
+    let orderBy = 'e.id DESC';
+    if (rep === 'sub' || rep === 'sub-or-unique') {
+      parts.push('(e.event_date IS NULL OR e.event_date >= CURDATE())');
+      orderBy = 'e.event_date ASC, e.event_time ASC, e.id ASC';
+    }
+
+    return { where: parts.join(' AND '), params, orderBy };
   }
 
-  private buildCategoryExists(cond: CategoryCriteria): { sql: string; params: unknown[] } {
+  /**
+   * EXISTS subquery on the events row itself (not spanning subs, since when
+   * hasCategory is used we target sub-or-unique — the rows that actually
+   * carry categories).
+   */
+  private buildCategoryExistsForEvent(cond: CategoryCriteria): { sql: string; params: unknown[] } {
     const { where, params } = this.buildCategoryCriteriaWhere(cond, 'c');
+    const tail = where ? ' AND ' + where : '';
     return {
-      sql: `EXISTS (SELECT 1 FROM category c WHERE c.category_event_id = e.id${where ? ' AND ' + where : ''})`,
+      sql: `EXISTS (SELECT 1 FROM category c WHERE c.category_event_id = e.id${tail})`,
       params,
     };
   }
@@ -92,7 +174,6 @@ export class Resolver {
     if (cond.soldout === true)  parts.push(`${alias}.category_free = 0`);
     if (cond.soldout === false) parts.push(`${alias}.category_free > 0`);
 
-    // Per-channel published shortcuts
     if (cond.webPublished) parts.push(`${alias}.category_web = 1`);
     if (cond.posPublished) parts.push(`${alias}.category_pos = 1`);
     if (cond.b2bPublished) parts.push(`${alias}.category_b2b = 1`);
@@ -124,10 +205,8 @@ export class Resolver {
     if (typeof selector === 'number') {
       row = await this.queryCategory('c.category_id = ?', [selector]);
     } else if (typeof selector === 'object' && 'id' in selector && 'eventId' in selector) {
-      // Full Category ref — re-fetch by id for fresh state
       row = await this.queryCategory('c.category_id = ?', [selector.id]);
     } else if (typeof selector === 'object') {
-      // Criteria case
       const { where, params } = this.buildCategoryCriteriaWhere(selector as CategoryCriteria, 'c');
       row = await this.queryCategory(where || '1=1', params);
     } else {
@@ -153,6 +232,7 @@ export class Resolver {
         c.category_pos       AS posStatus
       FROM category c
       WHERE ${where}
+      ORDER BY c.category_id DESC
       LIMIT 1
     `;
     return await this.db.one<Category>(sql, params);
