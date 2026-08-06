@@ -18,7 +18,8 @@ export type EventRep = 'unique' | 'main' | 'sub';
 export interface Event {
   id: number;
   title: string;
-  status?: 'published' | 'paused' | 'draft';
+  type?: string;                        // event_type — 'music' / 'sports' / 'comedy' / 'festival' / ...
+  status?: 'pub' | 'unpub' | 'nosal' | 'trash';
   date?: string | null;                 // event_date (YYYY-MM-DD)
   time?: string | null;                 // event_time (HH:MM:SS)
   rep?: EventRep;
@@ -27,7 +28,7 @@ export interface Event {
 }
 
 export interface EventCriteria {
-  status?: 'published' | 'paused' | 'draft';
+  status?: 'pub' | 'unpub' | 'nosal' | 'trash';
 
 
   rep?: EventRep | 'main-or-unique' | 'sub-or-unique';
