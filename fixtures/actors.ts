@@ -1,16 +1,18 @@
 import { test as base, type Page } from '@playwright/test';
 import type { TenantConfig } from '../types/tenant';
 import { DbClient } from '../helpers/db-client';
+import { Resolver } from '../helpers/resolver';
 import { Admin } from '../actors/admin';
 import { WebCustomer } from '../actors/web-customer';
 
 export const actorsFixtures = base.extend<{
-  db: DbClient;
-  admin: Admin;
+  db:       DbClient;
+  resolver: Resolver;
+  admin:    Admin;
   customer: WebCustomer;
 }, {
-  tenant: TenantConfig;
-  adminPage: Page;
+  tenant:       TenantConfig;
+  adminPage:    Page;
   customerPage: Page;
 }>({
   db: async ({ tenant }, use) => {
@@ -19,11 +21,15 @@ export const actorsFixtures = base.extend<{
     await client.close();
   },
 
+  resolver: async ({ db }, use) => {
+    await use(new Resolver(db));
+  },
+
   admin: async ({ adminPage, tenant, db }, use) => {
     await use(new Admin(adminPage, tenant, db));
   },
 
-  customer: async ({ customerPage, tenant }, use) => {
-    await use(new WebCustomer(customerPage, tenant));
+  customer: async ({ customerPage, tenant, resolver }, use) => {
+    await use(new WebCustomer(customerPage, tenant, resolver));
   },
 });
