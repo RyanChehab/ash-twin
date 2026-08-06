@@ -27,11 +27,11 @@ export class Resolver {
     let row: Event | null;
 
     if (typeof selector === 'number') {
-      row = await this.queryEvent('e.id = ?', [selector]);
+      row = await this.queryEvent('e.event_id = ?', [selector]);
     } else if (typeof selector === 'string') {
       row = await this.queryEvent('e.event_name = ?', [selector]);
     } else if (typeof selector === 'object' && 'id' in selector && 'title' in selector) {
-      row = await this.queryEvent('e.id = ?', [selector.id]);
+      row = await this.queryEvent('e.event_id = ?', [selector.id]);
     } else if (typeof selector === 'object') {
       const { where, params, orderBy } = this.buildEventCriteriaWhere(selector as EventCriteria);
       row = await this.queryEvent(where, params, orderBy);
@@ -43,22 +43,17 @@ export class Resolver {
     return row;
   }
 
-  /**
-   * Given a main event id, return the next upcoming sub (earliest date >= today).
-   * Used by WebCustomer as a fallback when the actor gets a main event with no
-   * matching-sub context (e.g. a criteria-less lookup that returned a main).
-   */
   async nextSub(mainId: number): Promise<Event> {
     const sql = `
       SELECT
-        e.id            AS id,
+        e.event_id      AS id,
         e.event_name    AS title,
-        e.status        AS status,
+        e.event_status  AS status,
         e.event_date    AS date,
         e.event_time    AS time,
         e.event_rep     AS rep,
         e.event_main_id AS mainId
-      FROM events e
+      FROM event e
       WHERE e.event_main_id = ?
         AND e.event_date >= CURDATE()
       ORDER BY e.event_date ASC, e.event_time ASC
@@ -72,18 +67,18 @@ export class Resolver {
   private async queryEvent(
     where: string,
     params: unknown[],
-    orderBy: string = 'e.id DESC',
+    orderBy: string = 'e.event_id DESC',
   ): Promise<Event | null> {
     const sql = `
       SELECT
-        e.id            AS id,
+        e.event_id      AS id,
         e.event_name    AS title,
-        e.status        AS status,
+        e.event_status  AS status,
         e.event_date    AS date,
         e.event_time    AS time,
         e.event_rep     AS rep,
         e.event_main_id AS mainId
-      FROM events e
+      FROM event e
       ${where ? 'WHERE ' + where : ''}
       ORDER BY ${orderBy}
       LIMIT 1
@@ -92,7 +87,6 @@ export class Resolver {
     return row ? this.hydrateEventRow(row) : null;
   }
 
-  /** Translate DB rep value 'main,sub' → 'unique' after read. */
   private hydrateEventRow(row: Event): Event {
     return { ...row, rep: repFromDb(row.rep as unknown as string) };
   }
@@ -103,7 +97,6 @@ export class Resolver {
     const parts: string[] = [];
     const params: unknown[] = [];
 
-    // Rep filter: pick a context-aware default
     const rep = c.rep ?? (c.hasCategory ? 'sub-or-unique' : 'main-or-unique');
     if (rep === 'main-or-unique') {
       parts.push(`e.event_rep IN ('main', ?)`);
@@ -117,7 +110,7 @@ export class Resolver {
     }
 
     if (c.status) {
-      parts.push('e.status = ?');
+      parts.push('e.event_status = ?');
       params.push(c.status);
     }
 
@@ -127,27 +120,20 @@ export class Resolver {
       params.push(...p);
     }
 
-    // When targeting subs (which have real dates), skip past events and prefer
-    // the closest upcoming performance. Uniques with dates get the same treatment.
-    let orderBy = 'e.id DESC';
+    let orderBy = 'e.event_id DESC';
     if (rep === 'sub' || rep === 'sub-or-unique') {
       parts.push('(e.event_date IS NULL OR e.event_date >= CURDATE())');
-      orderBy = 'e.event_date ASC, e.event_time ASC, e.id ASC';
+      orderBy = 'e.event_date ASC, e.event_time ASC, e.event_id ASC';
     }
 
     return { where: parts.join(' AND '), params, orderBy };
   }
 
-  /**
-   * EXISTS subquery on the events row itself (not spanning subs, since when
-   * hasCategory is used we target sub-or-unique — the rows that actually
-   * carry categories).
-   */
   private buildCategoryExistsForEvent(cond: CategoryCriteria): { sql: string; params: unknown[] } {
     const { where, params } = this.buildCategoryCriteriaWhere(cond, 'c');
     const tail = where ? ' AND ' + where : '';
     return {
-      sql: `EXISTS (SELECT 1 FROM category c WHERE c.category_event_id = e.id${tail})`,
+      sql: `EXISTS (SELECT 1 FROM category c WHERE c.category_event_id = e.event_id${tail})`,
       params,
     };
   }
