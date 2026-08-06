@@ -53,6 +53,7 @@ export class Resolver {
         e.event_date    AS date,
         e.event_time    AS time,
         e.event_rep     AS rep,
+        e.event_model   AS model,
         e.event_main_id AS mainId
       FROM event e
       WHERE e.event_main_id = ?
@@ -79,6 +80,7 @@ export class Resolver {
         e.event_date    AS date,
         e.event_time    AS time,
         e.event_rep     AS rep,
+        e.event_model   AS model,
         e.event_main_id AS mainId
       FROM event e
       ${where ? 'WHERE ' + where : ''}
@@ -111,10 +113,37 @@ export class Resolver {
       params.push(repToDb(rep));
     }
 
-    // Always require a real event_type on criteria lookups. The `event` table
-    // also holds F&B products and other typeless rows — those are not events
-    // in the domain sense and should never leak into event resolver results.
+    // Always filter by event_model. The `event` table also holds season passes,
+    // vouchers, products (F&B), and ebooks. Default to real 'event' rows only;
+    // callers can explicitly target other kinds via `model:`.
+    parts.push('e.event_model = ?');
+    params.push(c.model ?? 'event');
+
+    // Safety net: real events should have a non-null event_type for URL building.
     parts.push("e.event_type IS NOT NULL AND e.event_type != ''");
+
+    // Only browsable events. Mirrors Event::viewable() + Event::availableOnWeb():
+    //   - listed for sale on web
+    //   - inside the view window (begin/end may be NULL = open-ended)
+    //   - event_date has not passed (NULL date is fine — evergreen)
+    parts.push('e.event_webshop = 1');
+    parts.push('(e.event_view_begin IS NULL OR e.event_view_begin < NOW())');
+    parts.push('(e.event_view_end   IS NULL OR e.event_view_end   > NOW())');
+    parts.push('(e.event_date       IS NULL OR e.event_date       >= CURDATE())');
+
+    // A sub is only reachable if its parent main is itself browsable. Otherwise
+    // we'd return e.g. a pub sub whose unpub main renders an empty page.
+    parts.push(`(
+      e.event_main_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM event m
+        WHERE m.event_id = e.event_main_id
+          AND m.event_status  = 'pub'
+          AND m.event_webshop = 1
+          AND (m.event_view_begin IS NULL OR m.event_view_begin < NOW())
+          AND (m.event_view_end   IS NULL OR m.event_view_end   > NOW())
+      )
+    )`);
 
     if (c.status) {
       parts.push('e.event_status = ?');
@@ -129,7 +158,7 @@ export class Resolver {
 
     let orderBy = 'e.event_id DESC';
     if (rep === 'sub' || rep === 'sub-or-unique') {
-      parts.push('(e.event_date IS NULL OR e.event_date >= CURDATE())');
+      // Date-forward ordering — surfaces the next upcoming date first.
       orderBy = 'e.event_date ASC, e.event_time ASC, e.event_id ASC';
     }
 
