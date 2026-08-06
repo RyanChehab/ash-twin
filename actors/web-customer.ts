@@ -47,12 +47,13 @@ export class WebCustomer {
    */
   async openEvent(event: Event): Promise<void> {
     if (event.rep === 'sub' && event.mainId != null) {
-      await this.pages.event.open(event.mainId);
+      // Navigate via the main's URL (subs and mains share event_type)
+      await this.pages.event.open({ id: event.mainId, type: event.type });
       await this.pages.eventDates.pickDate(event.id);
       return;
     }
 
-    await this.pages.event.open(event.id);
+    await this.pages.event.open(event);
 
     if (event.rep === 'main') {
       const sub = await this.resolver.nextSub(event.id);
@@ -63,6 +64,12 @@ export class WebCustomer {
   /** Explicit date pick — for tests that want to select a specific sub. */
   async pickDate(sub: Event): Promise<void> {
     await this.pages.eventDates.pickDate(sub.id);
+  }
+
+  /** Compat: for old test code that passed just an id. */
+  async openEventById(id: number): Promise<void> {
+    const event = await this.resolver.event(id);
+    await this.openEvent(event);
   }
 
   // ── Composable purchase steps ──────────────────────────────────────────
