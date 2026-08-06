@@ -6,6 +6,7 @@ import { EventPage } from './cca/event';
 import { EventDatesPage } from './cca/event-dates';
 import { CheckoutPage } from './cca/checkout';
 import { ConfirmationPage } from './cca/confirmation';
+import { AuthPage } from './cca/auth';
 
 /**
  * Constructs the WebPages bundle for the given tenant.
@@ -23,5 +24,6 @@ export function webPages(page: Page, tenant: TenantConfig): WebPages {
     eventDates:   new EventDatesPage(page),
     checkout:     new CheckoutPage(page),
     confirmation: new ConfirmationPage(page),
+    auth:         new AuthPage(page),
   };
 }
