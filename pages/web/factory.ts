@@ -3,6 +3,7 @@ import type { TenantConfig } from '../../types/tenant';
 import type { WebPages } from './types';
 import { LandingPage } from './cca/landing';
 import { EventPage } from './cca/event';
+import { EventDatesPage } from './cca/event-dates';
 import { CheckoutPage } from './cca/checkout';
 import { ConfirmationPage } from './cca/confirmation';
 
@@ -19,6 +20,7 @@ export function webPages(page: Page, tenant: TenantConfig): WebPages {
   return {
     landing:      new LandingPage(page),
     event:        new EventPage(page),
+    eventDates:   new EventDatesPage(page),
     checkout:     new CheckoutPage(page),
     confirmation: new ConfirmationPage(page),
   };
