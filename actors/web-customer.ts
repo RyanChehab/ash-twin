@@ -6,19 +6,25 @@ import type { Ticket } from '../types/ticket';
 import type { WebPages } from '../pages/web/types';
 import type { CheckoutUserInfo } from '../pages/web/cca/checkout';
 import { webPages } from '../pages/web/factory';
+import { Resolver } from '../helpers/resolver';
 
 /**
  * WebCustomer actor — orchestrates the customer-facing purchase flow via the
  * WebPages bundle. Page-specific selectors live in the page objects; this
  * class only composes them into business operations.
  *
- * Note: seated purchases (SeatRef-based) will be added when a test requires
- * driving the seatmap picker.
+ * Handles multi-day events: when openEvent lands on a main event, the actor
+ * auto-picks the next upcoming sub via the Resolver, submits the date form,
+ * and continues on the sub's buy page.
  */
 export class WebCustomer {
   private pages: WebPages;
 
-  constructor(private page: Page, private tenant: TenantConfig) {
+  constructor(
+    private page:     Page,
+    private tenant:   TenantConfig,
+    private resolver: Resolver,
+  ) {
     this.pages = webPages(page, tenant);
   }
 
@@ -32,8 +38,31 @@ export class WebCustomer {
     await this.pages.landing.open();
   }
 
+  /**
+   * Navigate to an event's buy page. Handles all three shapes:
+   *   - unique → direct navigation to /event/{id}, arrives on buy page
+   *   - sub    → navigate via mainId to reach the date picker, then pick THIS sub
+   *   - main   → navigate to /event/{id}, date picker shown; auto-pick next
+   *              upcoming sub (fallback — most tests will pass a sub instead)
+   */
   async openEvent(event: Event): Promise<void> {
+    if (event.rep === 'sub' && event.mainId != null) {
+      await this.pages.event.open(event.mainId);
+      await this.pages.eventDates.pickDate(event.id);
+      return;
+    }
+
     await this.pages.event.open(event.id);
+
+    if (event.rep === 'main') {
+      const sub = await this.resolver.nextSub(event.id);
+      await this.pages.eventDates.pickDate(sub.id);
+    }
+  }
+
+  /** Explicit date pick — for tests that want to select a specific sub. */
+  async pickDate(sub: Event): Promise<void> {
+    await this.pages.eventDates.pickDate(sub.id);
   }
 
   // ── Composable purchase steps ──────────────────────────────────────────
