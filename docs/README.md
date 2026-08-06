@@ -11,6 +11,7 @@ Granular documentation of the framework. Each file covers one concern; read in o
 5. [Actors](./05-actors.md) — business orchestration on top of pages
 6. [Fixtures](./06-fixtures.md) — how tests receive dependencies
 7. [Tenant config](./07-tenant-config.md) — per-tenant JSON schema
+8. [SquareMaze DB conventions](./08-squaremaze-conventions.md) — table/column naming rules (read before writing SQL)
 
 ## Reference layout
 
