@@ -48,6 +48,7 @@ export class Resolver {
       SELECT
         e.event_id      AS id,
         e.event_name    AS title,
+        e.event_type    AS type,
         e.event_status  AS status,
         e.event_date    AS date,
         e.event_time    AS time,
@@ -73,6 +74,7 @@ export class Resolver {
       SELECT
         e.event_id      AS id,
         e.event_name    AS title,
+        e.event_type    AS type,
         e.event_status  AS status,
         e.event_date    AS date,
         e.event_time    AS time,
@@ -108,6 +110,11 @@ export class Resolver {
       parts.push('e.event_rep = ?');
       params.push(repToDb(rep));
     }
+
+    // Always require a real event_type on criteria lookups. The `event` table
+    // also holds F&B products and other typeless rows — those are not events
+    // in the domain sense and should never leak into event resolver results.
+    parts.push("e.event_type IS NOT NULL AND e.event_type != ''");
 
     if (c.status) {
       parts.push('e.event_status = ?');
