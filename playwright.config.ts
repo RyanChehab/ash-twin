@@ -6,10 +6,10 @@ const env    = process.env.ENV    ?? 'local';
 
 export default defineConfig({
   testDir: './specs',
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env.CI ? 4 : 8,
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
