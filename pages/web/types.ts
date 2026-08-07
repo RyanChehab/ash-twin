@@ -3,6 +3,7 @@ import type { EventPage } from './cca/event';
 import type { EventDatesPage } from './cca/event-dates';
 import type { CheckoutPage } from './cca/checkout';
 import type { ConfirmationPage } from './cca/confirmation';
+import type { AuthPage } from './cca/auth';
 
 /**
  * Contract for the customer-facing page objects the WebCustomer actor drives.
@@ -15,4 +16,5 @@ export interface WebPages {
   eventDates:   EventDatesPage;
   checkout:     CheckoutPage;
   confirmation: ConfirmationPage;
+  auth:         AuthPage;
 }
