@@ -5,6 +5,7 @@ import type { Category } from '../types/category';
 import type { Ticket } from '../types/ticket';
 import type { WebPages } from '../pages/web/types';
 import type { CheckoutUserInfo } from '../pages/web/cca/checkout';
+import type { RegisterData, LoginCreds } from '../types/user';
 import { webPages } from '../pages/web/factory';
 import { Resolver } from '../helpers/resolver';
 
@@ -36,6 +37,35 @@ export class WebCustomer {
 
   async openLanding(): Promise<void> {
     await this.pages.landing.open();
+  }
+
+  async openAuth(): Promise<void> {
+    await this.pages.auth.open();
+  }
+
+  // ── Register: individual gestures + composite ──────────────────────────
+
+  async fillRegister(data: RegisterData): Promise<void> {
+    await this.pages.auth.fillRegister(data);
+  }
+
+  async submitRegister(): Promise<void> {
+    await this.pages.auth.submitRegister();
+  }
+
+  async hasRegisterFieldError(field: string): Promise<boolean> {
+    return this.pages.auth.hasFieldError(field);
+  }
+
+  async landedOnActivation(): Promise<boolean> {
+    return this.pages.auth.isOnActivationPage();
+  }
+
+  // ── Login ───────────────────────────────────────────────────────────────
+
+  async login(creds: LoginCreds): Promise<void> {
+    await this.pages.auth.fillLogin(creds);
+    await this.pages.auth.submitLogin();
   }
 
   /**
