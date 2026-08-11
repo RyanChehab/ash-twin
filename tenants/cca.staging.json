@@ -12,6 +12,10 @@
     "superadmin": {
       "username": "${CCA_STAGING_SUPERADMIN_USER}",
       "password": "${CCA_STAGING_SUPERADMIN_PASSWORD}"
+    },
+    "testCustomer": {
+      "username": "${CCA_STAGING_TESTCUSTOMER_USER}",
+      "password": "${CCA_STAGING_TESTCUSTOMER_PASSWORD}"
     }
   },
 
