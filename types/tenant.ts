@@ -26,10 +26,11 @@ export interface TenantConfig {
 }
 
 export interface TenantUsers {
-  superadmin: UserCreds;
-  cashier?:   UserCreds;
-  scanner?:   UserCreds;
-  organizer?: UserCreds;
+  superadmin:   UserCreds;
+  cashier?:     UserCreds;
+  scanner?:     UserCreds;
+  organizer?:   UserCreds;
+  testCustomer?: UserCreds;
 }
 
 export interface UserCreds {

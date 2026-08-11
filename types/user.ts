@@ -16,8 +16,7 @@ export interface RegisterData {
   acceptTerms?: boolean;
 }
 
-/** Login form input. Username is the account email. */
 export interface LoginCreds {
-  email:    string;
+  username: string;
   password: string;
 }
