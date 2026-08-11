@@ -39,6 +39,15 @@ export class AuthPage extends BasePage {
   readonly activationInput:   Locator = this.page.locator('#registration-activation input[name="uar"]');
 
   async open(): Promise<void> {
+
+    await this.page.addInitScript(() => {
+      (window as unknown as { grecaptcha: unknown }).grecaptcha = {
+        enterprise: {
+          ready:   (cb: () => void) => cb(),
+          execute: async () => 'ash-twin-stub-token',
+        },
+      };
+    });
     await this.page.goto(this.path);
     await this.waitReady();
   }
@@ -55,7 +64,7 @@ export class AuthPage extends BasePage {
     if (data.lastName  !== undefined) await this.lastNameInput.fill(data.lastName);
     if (data.email     !== undefined) await this.emailInput.fill(data.email);
     if (data.dob       !== undefined) await this.setDob(data.dob);
-    if (data.phone     !== undefined) await this.phoneInput.fill(data.phone);
+    if (data.phone     !== undefined) await this.setPhone(data.phone);
     if (data.country)                 await this.countrySelect.selectOption(data.country);
     if (data.city)                    await this.selectCity(data.city);
     if (data.password  !== undefined) await this.password1Input.fill(data.password);
@@ -81,6 +90,46 @@ export class AuthPage extends BasePage {
 
   async submitRegister(): Promise<void> {
     await this.registerSubmit.click();
+  }
+
+  async submitRegisterProgrammatically(): Promise<void> {
+    // form.submit() doesn't block on the navigation response; we must wait
+    // for the POST to come back before querying the DB, or the user row
+    // won't be committed yet.
+    const responsePromise = this.page.waitForResponse(
+      r => r.request().method() === 'POST',
+      { timeout: 15_000 },
+    );
+    await this.registerForm.evaluate((form) => {
+      (form as HTMLFormElement).submit();
+    });
+    await responsePromise;
+    await this.waitReady();
+  }
+
+  async setPhone(number: string): Promise<void> {
+    await this.phoneInput.evaluate((el, num) => {
+      const $ = (window as unknown as { jQuery?: (el: unknown) => { intlTelInput: (m: string, v?: string) => void } }).jQuery;
+      if ($) $(el).intlTelInput('setNumber', num);
+      else (el as HTMLInputElement).value = num;
+    }, number);
+  }
+
+  /**
+   * Bypass the captcha server-side using the platform's built-in dev/staging
+   * skipCaptcha param. Adds a hidden `skipCaptcha=1` to the register form so
+   * validateCaptcha() short-circuits to true. Only effective when the site
+   * is running with INSTALL_VERSION containing 'dev' or 'staging'.
+   */
+  async enableTestCaptchaBypass(): Promise<void> {
+    await this.registerForm.evaluate((form) => {
+      if (form.querySelector('input[name="skipCaptcha"]')) return;
+      const input = document.createElement('input');
+      input.type  = 'hidden';
+      input.name  = 'skipCaptcha';
+      input.value = '1';
+      form.appendChild(input);
+    });
   }
 
   /**
@@ -144,5 +193,15 @@ export class AuthPage extends BasePage {
   async submitLogin(): Promise<void> {
     await this.loginSubmit.click();
     await this.waitReady();
+  }
+
+  async activate(activationPath: string): Promise<void> {
+    await this.page.goto(activationPath);
+    await this.waitReady();
+  }
+
+  /** True when the header renders the signed-in variant of `#user`. */
+  async isSignedIn(): Promise<boolean> {
+    return this.page.locator('#user.signedin').first().isVisible();
   }
 }
