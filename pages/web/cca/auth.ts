@@ -186,7 +186,7 @@ export class AuthPage extends BasePage {
   // ── Login form: fillers + submit ────────────────────────────────────────
 
   async fillLogin(creds: LoginCreds): Promise<void> {
-    await this.loginUsername.fill(creds.email);
+    await this.loginUsername.fill(creds.username);
     await this.loginPassword.fill(creds.password);
   }
 
@@ -195,9 +195,25 @@ export class AuthPage extends BasePage {
     await this.waitReady();
   }
 
+  async hasLoginFieldError(field: string): Promise<boolean> {
+    return this.page
+      .locator(`#signin-form2 [name="${field}"].error`)
+      .first()
+      .isVisible();
+  }
+
   async activate(activationPath: string): Promise<void> {
-    await this.page.goto(activationPath);
-    await this.waitReady();
+    // On successful activation the server responds with an immediate 302 to
+    // `?profileVerified=success`, so `page.goto(activationPath)` never
+    // commits to the activation URL — Playwright reports it as "interrupted
+    // by another navigation". That interruption IS the success signal.
+    // Swallow it and wait for the final page.
+    try {
+      await this.page.goto(activationPath);
+    } catch (err) {
+      if (!String(err).includes('interrupted by another navigation')) throw err;
+    }
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   /** True when the header renders the signed-in variant of `#user`. */
