@@ -41,18 +41,18 @@ Three arguments:
 
 Under the hood the wrapper:
 1. Looks up `id` in the registry
-2. Uses the entry's `title` as the Playwright test name
-3. Auto-injects two tags: `@id:N` and `@{category}`
+2. Builds the Playwright test title as `ID: {id} {registry.title}`
+3. Auto-injects a single tag: `@{category}`
 4. Throws at import time if the id isn't in the registry, or if the registry has a duplicate
 
 Playwright's own methods (`test.describe`, `test.beforeAll`, `test.step`, `test.use`, ...) still work — the wrapper passes them through.
 
-## Tag convention
+## Title and tag convention
 
-Every test gets exactly two tags:
+Each test surfaces as:
 
-- **`@id:N`** — the stable identifier. Filterable with `--grep @id:14` to run one specific test.
-- **`@{category}`** — the test category, passed in each call. Today the only category is `vitality`.
+- **Title**: `ID: 1 empty first name blocks submission` — id lives at the start so it's visible in the terminal, the HTML report, UI mode, and any JSON export without ever needing to inspect tags.
+- **Tag**: `@{category}` — only one tag emitted. Today every test in `specs/vitality/` passes `'vitality'` → `@vitality`.
 
 **Folder rule** (a convention, not framework-enforced):
 - Tests under `specs/vitality/` pass `'vitality'` as the category.
@@ -66,8 +66,10 @@ Filter examples:
 # Run every vitality test
 npx playwright test --grep @vitality
 
-# Run only test 10
-npx playwright test --grep @id:10
+# Run only test 10 — three equivalent options
+npx playwright test --grep "^ID: 10 "               # by title (mind the trailing space so 10 doesn't match 100)
+npx playwright test specs/vitality/auth.spec.ts:98  # by file path + line number
+npx playwright test --ui                            # UI mode, click any test to run it
 ```
 
 ## Adding a new test
