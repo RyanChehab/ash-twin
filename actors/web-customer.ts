@@ -76,6 +76,18 @@ export class WebCustomer {
     await this.pages.auth.submitLogin();
   }
 
+  async fillLogin(creds: LoginCreds): Promise<void> {
+    await this.pages.auth.fillLogin(creds);
+  }
+
+  async submitLogin(): Promise<void> {
+    await this.pages.auth.submitLogin();
+  }
+
+  async hasLoginFieldError(field: string): Promise<boolean> {
+    return this.pages.auth.hasLoginFieldError(field);
+  }
+
   async activate(activationPath: string): Promise<void> {
     await this.pages.auth.activate(activationPath);
   }
