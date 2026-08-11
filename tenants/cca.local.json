@@ -12,6 +12,10 @@
     "superadmin": {
       "username": "${CCA_LOCAL_SUPERADMIN_USER}",
       "password": "${CCA_LOCAL_SUPERADMIN_PASSWORD}"
+    },
+    "testCustomer": {
+      "username": "ryan@tixity.com",
+      "password": "Testing@1234"
     }
   },
 
