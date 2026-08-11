@@ -12,6 +12,7 @@ Granular documentation of the framework. Each file covers one concern; read in o
 6. [Fixtures](./06-fixtures.md) — how tests receive dependencies
 7. [Tenant config](./07-tenant-config.md) — per-tenant JSON schema
 8. [SquareMaze DB conventions](./08-squaremaze-conventions.md) — table/column naming rules (read before writing SQL)
+9. [Writing tests](./09-writing-tests.md) — the registry, the `test(id, fn)` wrapper, and the folder-based tag convention
 
 ## Reference layout
 
