@@ -53,6 +53,14 @@ export class WebCustomer {
     await this.pages.auth.submitRegister();
   }
 
+  async enableTestCaptchaBypass(): Promise<void> {
+    await this.pages.auth.enableTestCaptchaBypass();
+  }
+
+  async submitRegisterProgrammatically(): Promise<void> {
+    await this.pages.auth.submitRegisterProgrammatically();
+  }
+
   async hasRegisterFieldError(field: string): Promise<boolean> {
     return this.pages.auth.hasFieldError(field);
   }
@@ -66,6 +74,14 @@ export class WebCustomer {
   async login(creds: LoginCreds): Promise<void> {
     await this.pages.auth.fillLogin(creds);
     await this.pages.auth.submitLogin();
+  }
+
+  async activate(activationPath: string): Promise<void> {
+    await this.pages.auth.activate(activationPath);
+  }
+
+  async isSignedIn(): Promise<boolean> {
+    return this.pages.auth.isSignedIn();
   }
 
   /**
