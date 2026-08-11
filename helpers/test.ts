@@ -37,7 +37,8 @@ function callable(id: number, category: string, fn: TestFn): void {
       `ash-twin: test id ${id} is not in specs/registry.json. Add it before writing the spec.`,
     );
   }
-  base(entry.title, { tag: [`@id:${entry.id}`, `@${category}`] }, fn);
+  // ID lives at the start of the title so it's visible everywhere the title
+  base(`ID: ${entry.id} ${entry.title}`, { tag: [`@${category}`] }, fn);
 }
 
 // Attach Playwright's `describe`, `beforeAll`, `step`, etc. so callers can
