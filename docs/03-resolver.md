@@ -44,6 +44,7 @@ Any `EventCriteria` query enforces these implicitly. Direct id / name lookups (`
 | `event_view_begin < NOW()` and `event_view_end > NOW()` | Inside the configured view window. NULL either side = open-ended. |
 | `event_date >= CURDATE()` | Not yet past. NULL date is fine (evergreen). |
 | Parent-viewable | For subs (`event_main_id NOT NULL`), the parent main must itself be pub + webshop=1 + inside its view window. Prevents returning a pub sub whose unpub main renders an empty page. |
+| No linked addons | Events with any eligible addon linked via `addonlink` are excluded — they'd divert the customer to the addons page during checkout. Override via `hasAddons: true` in the criteria to explicitly target events with addons. |
 
 ## Criteria dimensions supported
 
@@ -52,6 +53,7 @@ Any `EventCriteria` query enforces these implicitly. Direct id / name lookups (`
 - `rep` — `'unique' \| 'main' \| 'sub' \| 'main-or-unique' \| 'sub-or-unique'`. Default depends on `hasCategory`: set → `'sub-or-unique'` (categories only live on those); unset → `'main-or-unique'` (landing-visible rows).
 - `model` — `EventModel`. Defaults to `'event'`. Set explicitly to target `'seasonpass'` / `'voucher'` / `'product'` / `'ebook'`.
 - `hasCategory` — a nested `CategoryCriteria` (becomes an EXISTS subquery)
+- `hasAddons` — `boolean`. Default `false` → events with addons are filtered out. Set `true` to only return events with addons (used when testing the addons flow itself).
 
 ### CategoryCriteria
 - `eventId` — scope to a specific event

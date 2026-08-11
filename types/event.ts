@@ -36,4 +36,5 @@ export interface EventCriteria {
   model?: EventModel;
 
   hasCategory?: CategoryCriteria;
+  hasAddons?: boolean;
 }
