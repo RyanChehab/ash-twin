@@ -35,9 +35,11 @@ function loadTenant(name: string, env: string): TenantConfig {
 }
 
 export const tenantFixture = base.extend<{ tenant: TenantConfig }>({
-  tenant: async ({}, use) => {
-    const name = process.env.TENANT ?? 'cca';
-    const env  = process.env.ENV    ?? 'local';
+  tenant: async ({}, use, testInfo) => {
+
+    const meta = testInfo.project.metadata as { tenant?: string; env?: string } | undefined;
+    const name = meta?.tenant ?? process.env.TENANT ?? 'cca';
+    const env  = meta?.env    ?? process.env.ENV    ?? 'local';
     await use(loadTenant(name, env));
   },
 });
