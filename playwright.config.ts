@@ -1,9 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import 'dotenv/config';
 
-const tenant = process.env.TENANT ?? 'cca';
-const env    = process.env.ENV    ?? 'local';
-
 export default defineConfig({
   testDir: './specs',
   fullyParallel: true,
@@ -24,7 +21,11 @@ export default defineConfig({
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
   },
+  // Every tenant/env combo we want to test is a Playwright project. Running
+  // `npx playwright test` runs them all in one shot with a combined report;
+  // `--project=cca-local` narrows to one.
   projects: [
-    { name: `${tenant}-${env}` },
+    { name: 'cca-local',   metadata: { tenant: 'cca', env: 'local'   } },
+    { name: 'cca-staging', metadata: { tenant: 'cca', env: 'staging' } },
   ],
 });
