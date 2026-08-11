@@ -23,7 +23,7 @@ const validBase = (email?: string): RegisterData => ({
 
 // ── Register form: per-field client-side validation ────────────────────────
 
-test(1, async ({ customer }) => {
+test(1, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), firstName: '' });
   await customer.submitRegister();
@@ -31,35 +31,35 @@ test(1, async ({ customer }) => {
   expect(await customer.landedOnActivation()).toBe(false);
 });
 
-test(2, async ({ customer }) => {
+test(2, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), lastName: '' });
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('user_lastname')).toBe(true);
 });
 
-test(3, async ({ customer }) => {
+test(3, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), email: 'not-an-email' });
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('user_email')).toBe(true);
 });
 
-test(4, async ({ customer }) => {
+test(4, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), dob: '' });
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('user_dob')).toBe(true);
 });
 
-test(5, async ({ customer }) => {
+test(5, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), phone: '' });
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('user_phone')).toBe(true);
 });
 
-test(6, async ({ customer }) => {
+test(6, "vitality", async ({ customer }) => {
   // Rule: >=8 chars, at least 1 digit, 1 lowercase, 1 uppercase (`strongPassword`).
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), password: 'weakpass' });
@@ -67,7 +67,7 @@ test(6, async ({ customer }) => {
   expect(await customer.hasRegisterFieldError('password1')).toBe(true);
 });
 
-test(7, async ({ customer }) => {
+test(7, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({
     ...validBase(),
@@ -78,14 +78,14 @@ test(7, async ({ customer }) => {
   expect(await customer.hasRegisterFieldError('password2')).toBe(true);
 });
 
-test(8, async ({ customer }) => {
+test(8, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillRegister({ ...validBase(), acceptTerms: false });
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('check_condition')).toBe(true);
 });
 
-test(9, async ({ customer }) => {
+test(9, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('user_firstname')).toBe(true);
@@ -95,7 +95,7 @@ test(9, async ({ customer }) => {
 
 // ── Signup end-to-end ──────────────────────────────────────────────────────
 
-test(10, async ({ customer, db, feedback }) => {
+test(10, "vitality", async ({ customer, db, feedback }) => {
   const email = `ash.twin.${Date.now()}@example.com`;
 
   try {
@@ -125,7 +125,7 @@ test(10, async ({ customer, db, feedback }) => {
 // Login tests rely on `tenant.users.testCustomer` already existing (and being
 // activated) in the tenant's DB. Set the creds in `tenants/{name}.{env}.json`.
 
-test(11, async ({ customer, tenant }) => {
+test(11, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
   await customer.openAuth();
   await customer.fillLogin({ username: '', password: creds.password });
@@ -134,7 +134,7 @@ test(11, async ({ customer, tenant }) => {
   expect(await customer.isSignedIn()).toBe(false);
 });
 
-test(12, async ({ customer, tenant }) => {
+test(12, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
   await customer.openAuth();
   await customer.fillLogin({ username: creds.username, password: '' });
@@ -143,7 +143,7 @@ test(12, async ({ customer, tenant }) => {
   expect(await customer.isSignedIn()).toBe(false);
 });
 
-test(13, async ({ customer }) => {
+test(13, "vitality", async ({ customer }) => {
   await customer.openAuth();
   await customer.fillLogin({
     username: 'not.a.real.user@ashtwin.com',
@@ -155,7 +155,7 @@ test(13, async ({ customer }) => {
   expect(await customer.isSignedIn()).toBe(false);
 });
 
-test(14, async ({ customer, tenant, feedback }) => {
+test(14, "vitality", async ({ customer, tenant, feedback }) => {
   const creds = tenant.users.testCustomer!;
   await customer.openAuth();
   await customer.login(creds);

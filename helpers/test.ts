@@ -6,16 +6,12 @@ import { test as base } from '../fixtures';
 const thisDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * A registered test in `specs/registry.json`. The registry is the source of
- * truth for what tests exist, their titles, and their metadata. Playwright
- * receives that metadata as tags at runtime.
+ * A registered test in `specs/registry.json`. Registry is the single source
+ * of truth for what tests exist. Playwright receives the title at runtime.
  */
 interface RegistryEntry {
-  id:          number;
-  title:       string;
-  feature:     string;
-  surface:     string;
-  validatedOn: string[];
+  id:    number;
+  title: string;
 }
 
 const registryPath = path.resolve(thisDir, '..', 'specs', 'registry.json');
@@ -31,28 +27,17 @@ for (const entry of registry) {
   byId.set(entry.id, entry);
 }
 
-// The base signature has two overloads; picking the 3-arg one so we get
-// the fixture-typed test body, not the TestDetails options bag.
 type TestFn = Parameters<typeof base>[2];
 
-/**
- * Ash Twin's registered-test entrypoint. Replaces Playwright's raw `test()`
- * with an id-driven variant that looks up the title and tags
- */
-function callable(id: number, fn: TestFn): void {
+
+function callable(id: number, category: string, fn: TestFn): void {
   const entry = byId.get(id);
   if (!entry) {
     throw new Error(
       `ash-twin: test id ${id} is not in specs/registry.json. Add it before writing the spec.`,
     );
   }
-  const tags = [
-    `@id:${entry.id}`,
-    `@feature:${entry.feature}`,
-    `@surface:${entry.surface}`,
-    ...entry.validatedOn.map(t => `@validated-on:${t}`),
-  ];
-  base(entry.title, { tag: tags }, fn);
+  base(entry.title, { tag: [`@id:${entry.id}`, `@${category}`] }, fn);
 }
 
 // Attach Playwright's `describe`, `beforeAll`, `step`, etc. so callers can
