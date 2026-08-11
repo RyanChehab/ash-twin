@@ -144,6 +144,17 @@ export class Resolver {
           AND (m.event_view_end   IS NULL OR m.event_view_end   > NOW())
       )
     )`);
+    
+    const addonExists = `EXISTS (
+      SELECT 1 FROM addonlink al
+      JOIN event    ae ON ae.event_id         = al.addonlink_addon_id
+      JOIN category ac ON ac.category_event_id = ae.event_id
+      WHERE al.addonlink_event_id = e.event_id
+        AND ae.event_status  = 'pub'
+        AND ae.event_webshop = 1
+        AND ac.category_web  = 1
+    )`;
+    parts.push(c.hasAddons === true ? addonExists : `NOT ${addonExists}`);
 
     if (c.status) {
       parts.push('e.event_status = ?');
