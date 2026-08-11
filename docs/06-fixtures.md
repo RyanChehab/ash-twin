@@ -8,7 +8,8 @@
 |---|---|---|
 | `tenant.ts` | `tenant` — loaded TenantConfig | `TENANT` and `ENV` env vars |
 | `auth.ts` | `adminPage`, `customerPage` — logged-in browser tabs | `tenant` |
-| `actors.ts` | `db`, `admin`, `customer` (`resolver` next) | `tenant`, `adminPage`, `customerPage` |
+| `actors.ts` | `db`, `resolver`, `admin`, `customer` | `tenant`, `adminPage`, `customerPage` |
+| `feedback.ts` | `feedback(message)` — attach a note to the test result | — |
 | `index.ts` | Merged `test` export tests import from | All of the above |
 
 ## How tests use fixtures
@@ -81,17 +82,41 @@ Same test file runs against any tenant/env by changing env vars. Test code never
 
 ## Adding a new fixture
 
-1. Add it to `actors.ts` (or a new file if it's a new concern)
-2. Merge it into `index.ts` via `mergeTests`
-3. Tests can now destructure it
+**Rule**: every fixture lives in its own file under `fixtures/`. `fixtures/index.ts` only imports, merges, and re-exports — it never contains fixture logic. This keeps concerns isolated as the framework grows (plugin-setup, entity-registry, snapshot, etc. all land as new files, not appended into a growing index).
 
-Example — adding a `resolver` fixture:
+1. Create `fixtures/{name}.ts` with an `{name}Fixtures` export
+2. Import + add it to `mergeTests(...)` in `fixtures/index.ts`
+3. Tests destructure it: `test('x', async ({ myFixture }) => { ... })`
+
+Example — the `feedback` fixture (`fixtures/feedback.ts`):
 
 ```ts
-// fixtures/actors.ts
-resolver: async ({ db }, use) => {
-  await use(new Resolver(db));
-},
+import { test as base } from '@playwright/test';
+
+export const feedbackFixtures = base.extend<{
+  feedback: (message: string) => void;
+}>({
+  feedback: async ({}, use, testInfo) => {
+    await use((message: string) => {
+      testInfo.annotations.push({ type: 'feedback', description: message });
+    });
+  },
+});
 ```
 
-That's it — `test('x', async ({ resolver }) => ...)` now works.
+Wired into `fixtures/index.ts`:
+
+```ts
+export const test = mergeTests(tenantFixture, authFixtures, actorsFixtures, feedbackFixtures);
+```
+
+Tests then use it naturally:
+
+```ts
+test(14, async ({ customer, feedback }) => {
+  // ...
+  feedback(`user ${email} signed up`);
+});
+```
+
+Annotations show in the JSON report under each test's `annotations` array and in the HTML report's test detail view. Same channel a future ash-twin dashboard would ingest via a custom reporter.
