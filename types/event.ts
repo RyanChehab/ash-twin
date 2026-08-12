@@ -1,22 +1,10 @@
 import type { CategoryCriteria } from './category';
+import type { AddonCriteria } from './addon';
 
-/**
- * `rep` classifies event instance shape:
- *   - 'unique' — standalone one-off (DB value: 'main,sub')
- *   - 'main'   — parent of a multi-day series (has no categories itself)
- *   - 'sub'    — one date instance under a main (categories live here)
- * Only 'unique' and 'main' events appear on the landing page.
- * Only 'unique' and 'sub' events have categories (buyable events).
- */
 export type EventRep = 'unique' | 'main' | 'sub';
 
 export type EventModel = 'event' | 'seasonpass' | 'voucher' | 'product' | 'ebook';
 
-/**
- * SquareMaze Event — the domain model.
- * All fields optional beyond id + title; the rest come from the DB or default server-side.
- * The `data` bag holds obscure fields we haven't enumerated yet — accessed via `event.data?.field_name`.
- */
 export interface Event {
   id: number;
   title: string;
@@ -30,11 +18,26 @@ export interface Event {
   data?: Record<string, unknown>;
 }
 
+  // Filter set for querying events.
+
 export interface EventCriteria {
+  // Core selection
   status?: 'pub' | 'unpub' | 'nosal' | 'trash';
-  rep?: EventRep | 'main-or-unique' | 'sub-or-unique';
-  model?: EventModel;
+  rep?:    EventRep | 'main-or-unique' | 'sub-or-unique';
+  model?:  EventModel;
+
+  // Visibility flags
+  webshop?:            boolean;   // event_webshop = 1
+  inViewWindow?:       boolean;   // NOW() between event_view_begin and event_view_end
+  isFuture?:           boolean;   // event_date >= CURDATE() (NULL date passes)
+  parentViewable?:     boolean;   // for subs, parent main is pub + webshop + inside its view window
+  isPresale?:          boolean;   // event_presales flag
+  isPrivate?:          boolean;   // event_is_private flag
+  requiresNationalId?: boolean;   // event_nationalid flag
+  requiresLogin?:      boolean;   // event_requires_login flag
 
   hasCategory?: CategoryCriteria;
-  hasAddons?: boolean;
+
+  hasAddons?:   AddonCriteria;   // event MUST have an addon matching this shape
+  hasNoAddons?: AddonCriteria;   // event MUST NOT have any addon matching this shape
 }
