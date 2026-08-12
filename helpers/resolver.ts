@@ -1,6 +1,7 @@
 import type { DbClient } from './db-client';
 import type { Event, EventCriteria, EventRep } from '../types/event';
 import type { Category, CategoryCriteria } from '../types/category';
+import type { AddonCriteria } from '../types/addon';
 import type { EventSelector, CategorySelector } from '../types/selectors';
 
 // ── DB ↔ domain rep value mapping ──────────────────────────────────────────
@@ -95,83 +96,106 @@ export class Resolver {
     return { ...row, rep: repFromDb(row.rep as unknown as string) };
   }
 
+  /**
+   * Translate an `EventCriteria` into a WHERE clause. The resolver has no
+   * defaults — every predicate is gated on a criterion being set explicitly.
+   * Curated preset combinations live in `helpers/event-presets.ts` so tests
+   * can reference `events.normal`, `events.presale`, etc. instead of hand-
+   * rolling criteria at each call site.
+   */
   private buildEventCriteriaWhere(
     c: EventCriteria,
   ): { where: string; params: unknown[]; orderBy: string } {
     const parts: string[] = [];
     const params: unknown[] = [];
 
-    const rep = c.rep ?? (c.hasCategory ? 'sub-or-unique' : 'main-or-unique');
-    if (rep === 'main-or-unique') {
-      parts.push(`e.event_rep IN ('main', ?)`);
-      params.push(REP_DB_UNIQUE);
-    } else if (rep === 'sub-or-unique') {
-      parts.push(`e.event_rep IN ('sub', ?)`);
-      params.push(REP_DB_UNIQUE);
-    } else {
-      parts.push('e.event_rep = ?');
-      params.push(repToDb(rep));
-    }
-
-    // Always filter by event_model. The `event` table also holds season passes,
-    // vouchers, products (F&B), and ebooks. Default to real 'event' rows only;
-    // callers can explicitly target other kinds via `model:`.
-    parts.push('e.event_model = ?');
-    params.push(c.model ?? 'event');
-
-    // Safety net: real events should have a non-null event_type for URL building.
-    parts.push("e.event_type IS NOT NULL AND e.event_type != ''");
-
-    // Only browsable events. Mirrors Event::viewable() + Event::availableOnWeb():
-    //   - listed for sale on web
-    //   - inside the view window (begin/end may be NULL = open-ended)
-    //   - event_date has not passed (NULL date is fine — evergreen)
-    parts.push('e.event_webshop = 1');
-    parts.push('(e.event_view_begin IS NULL OR e.event_view_begin < NOW())');
-    parts.push('(e.event_view_end   IS NULL OR e.event_view_end   > NOW())');
-    parts.push('(e.event_date       IS NULL OR e.event_date       >= CURDATE())');
-
-    // A sub is only reachable if its parent main is itself browsable. Otherwise
-    // we'd return e.g. a pub sub whose unpub main renders an empty page.
-    parts.push(`(
-      e.event_main_id IS NULL
-      OR EXISTS (
-        SELECT 1 FROM event m
-        WHERE m.event_id = e.event_main_id
-          AND m.event_status  = 'pub'
-          AND m.event_webshop = 1
-          AND (m.event_view_begin IS NULL OR m.event_view_begin < NOW())
-          AND (m.event_view_end   IS NULL OR m.event_view_end   > NOW())
-      )
-    )`);
-    
-    const addonExists = `EXISTS (
-      SELECT 1 FROM addonlink al
-      JOIN event    ae ON ae.event_id         = al.addonlink_addon_id
-      JOIN category ac ON ac.category_event_id = ae.event_id
-      WHERE al.addonlink_event_id = e.event_id
-        AND ae.event_status  = 'pub'
-        AND ae.event_webshop = 1
-        AND ac.category_web  = 1
-    )`;
-    parts.push(c.hasAddons === true ? addonExists : `NOT ${addonExists}`);
-
+    // Core selection
     if (c.status) {
       parts.push('e.event_status = ?');
       params.push(c.status);
     }
 
+    if (c.rep) {
+      if (c.rep === 'main-or-unique') {
+        parts.push(`e.event_rep IN ('main', ?)`);
+        params.push(REP_DB_UNIQUE);
+      } else if (c.rep === 'sub-or-unique') {
+        parts.push(`e.event_rep IN ('sub', ?)`);
+        params.push(REP_DB_UNIQUE);
+      } else {
+        parts.push('e.event_rep = ?');
+        params.push(repToDb(c.rep));
+      }
+    }
+
+    if (c.model) {
+      parts.push('e.event_model = ?');
+      params.push(c.model);
+    }
+
+    // Visibility flags — each one only applied when explicitly set.
+    if (c.webshop === true)  parts.push('e.event_webshop = 1');
+    if (c.webshop === false) parts.push('e.event_webshop = 0');
+
+    if (c.inViewWindow === true) {
+      parts.push('(e.event_view_begin IS NULL OR e.event_view_begin < NOW())');
+      parts.push('(e.event_view_end   IS NULL OR e.event_view_end   > NOW())');
+    }
+    if (c.inViewWindow === false) {
+      parts.push('(e.event_view_begin >= NOW() OR e.event_view_end <= NOW())');
+    }
+
+    if (c.isFuture === true)  parts.push('(e.event_date IS NULL OR e.event_date >= CURDATE())');
+    if (c.isFuture === false) parts.push('e.event_date < CURDATE()');
+
+    if (c.parentViewable === true) {
+      parts.push(`(
+        e.event_main_id IS NULL
+        OR EXISTS (
+          SELECT 1 FROM event m
+          WHERE m.event_id = e.event_main_id
+            AND m.event_status  = 'pub'
+            AND m.event_webshop = 1
+            AND (m.event_view_begin IS NULL OR m.event_view_begin < NOW())
+            AND (m.event_view_end   IS NULL OR m.event_view_end   > NOW())
+        )
+      )`);
+    }
+
+    if (c.isPresale === true)  parts.push('e.event_presales = 1');
+    if (c.isPresale === false) parts.push('(e.event_presales = 0 OR e.event_presales IS NULL)');
+
+    if (c.isPrivate === true)  parts.push('e.event_is_private = 1');
+    if (c.isPrivate === false) parts.push('(e.event_is_private = 0 OR e.event_is_private IS NULL)');
+
+    if (c.requiresNationalId === true)  parts.push('e.event_nationalid = 1');
+    if (c.requiresNationalId === false) parts.push('(e.event_nationalid = 0 OR e.event_nationalid IS NULL)');
+
+    if (c.requiresLogin === true)  parts.push('e.event_requires_login = 1');
+    if (c.requiresLogin === false) parts.push('(e.event_requires_login = 0 OR e.event_requires_login IS NULL)');
+
+    if (c.hasAddons) {
+      const { sql, params: p } = this.buildAddonExistsForEvent(c.hasAddons);
+      parts.push(`EXISTS (${sql})`);
+      params.push(...p);
+    }
+    if (c.hasNoAddons) {
+      const { sql, params: p } = this.buildAddonExistsForEvent(c.hasNoAddons);
+      parts.push(`NOT EXISTS (${sql})`);
+      params.push(...p);
+    }
+
+    // Nested category filter — becomes an EXISTS subquery on `category`.
     if (c.hasCategory) {
       const { sql, params: p } = this.buildCategoryExistsForEvent(c.hasCategory);
       parts.push(sql);
       params.push(...p);
     }
 
-    let orderBy = 'e.event_id DESC';
-    if (rep === 'sub' || rep === 'sub-or-unique') {
-      // Date-forward ordering — surfaces the next upcoming date first.
-      orderBy = 'e.event_date ASC, e.event_time ASC, e.event_id ASC';
-    }
+    // Sub events want date-forward ordering (surface the next upcoming date first).
+    const orderBy = (c.rep === 'sub' || c.rep === 'sub-or-unique')
+      ? 'e.event_date ASC, e.event_time ASC, e.event_id ASC'
+      : 'e.event_id DESC';
 
     return { where: parts.join(' AND '), params, orderBy };
   }
@@ -181,6 +205,48 @@ export class Resolver {
     const tail = where ? ' AND ' + where : '';
     return {
       sql: `EXISTS (SELECT 1 FROM category c WHERE c.category_event_id = e.event_id${tail})`,
+      params,
+    };
+  }
+
+  /**
+   * Build the body of an addon-existence subquery. Emits everything after
+   * `EXISTS (` and before `)` — the caller decides whether the outer clause
+   * is `EXISTS` or `NOT EXISTS`. The subquery joins `addonlink` → `event`
+   * (the addon row) and optionally `category` (via `hasCategory`).
+   */
+  private buildAddonExistsForEvent(cond: AddonCriteria): { sql: string; params: unknown[] } {
+    const clauses: string[] = ['al.addonlink_event_id = e.event_id'];
+    const params: unknown[] = [];
+
+    if (cond.eventId !== undefined) {
+      clauses.push('al.addonlink_event_id = ?');
+      params.push(cond.eventId);
+    }
+    if (cond.status) {
+      clauses.push('ae.event_status = ?');
+      params.push(cond.status);
+    }
+    if (cond.webshop === true)  clauses.push('ae.event_webshop = 1');
+    if (cond.webshop === false) clauses.push('ae.event_webshop = 0');
+
+    // Optional join into the addon's category to filter by category shape.
+    let categoryJoin = '';
+    if (cond.hasCategory) {
+      categoryJoin = 'JOIN category ac ON ac.category_event_id = ae.event_id';
+      const { where, params: catParams } = this.buildCategoryCriteriaWhere(cond.hasCategory, 'ac');
+      if (where) clauses.push(where);
+      params.push(...catParams);
+    }
+
+    return {
+      sql: `
+        SELECT 1
+        FROM addonlink al
+        JOIN event ae ON ae.event_id = al.addonlink_addon_id
+        ${categoryJoin}
+        WHERE ${clauses.join(' AND ')}
+      `,
       params,
     };
   }
