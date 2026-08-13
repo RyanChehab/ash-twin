@@ -69,14 +69,54 @@ export const cybersource_unified: PaymentStrategy = {
     );
     await payFrame.getByRole('button', { name: /continue|^pay$|submit|confirm/i }).first().click();
 
-    // 5. SDK tokenises + runs any 3DS inline, populates #flex_token, and
-    //    calls paymentForm.submit(). The response renders checkout_result.tpl
-    //    on the same URL (no clean action= param survives), so we wait for
-    //    the confirmation heading instead of an URL pattern.
-    await page.locator('h1.success, h1.pending, h1.fail')
-      .waitFor({ state: 'visible', timeout: 60_000 });
+    // 5. SDK tokenises + optionally shows a 3DS challenge (Cybersource routes
+    //    it through Cardinal / Centinel — visible as `centinelapistag` or
+    //    `cardinaltrusted` in the challenge iframe's URL). Once 3DS clears
+    //    (or if none is triggered) the SDK populates #flex_token and calls
+    //    paymentForm.submit(), which renders checkout_result.tpl.
+    //
+    //    Poll: confirmation heading wins → done. Otherwise, if a 3DS
+    //    challenge frame appears, drop the sandbox OTP (`1234`) and submit,
+    //    then keep polling until the heading shows.
+    const successHeading = page.locator('h1.success, h1.pending, h1.fail');
+    const deadline = Date.now() + 60_000;
+    while (Date.now() < deadline) {
+      if ((await successHeading.count()) > 0 && await successHeading.first().isVisible().catch(() => false)) {
+        return;
+      }
+      await tryComplete3dsChallenge(page, '1234');
+      await page.waitForTimeout(500);
+    }
+    throw new Error(
+      `cybersource_unified: no confirmation heading after 60s. Current URL: ${page.url()}`,
+    );
   },
 };
+
+/**
+ * Look for a Cybersource 3DS challenge iframe (Cardinal/Centinel) and, if
+ * found with an empty OTP field, drop `otp` into it and submit. No-op if
+ * no such frame is present or the field is already filled.
+ */
+async function tryComplete3dsChallenge(page: Page, otp: string): Promise<void> {
+  for (const frame of page.frames()) {
+    if (!/cardinal|centinel|3ds/i.test(frame.url())) continue;
+    try {
+      const otpField = frame.getByRole('textbox').first();
+      if ((await otpField.count()) === 0) continue;
+      if (!(await otpField.isVisible())) continue;
+      if ((await otpField.inputValue()) !== '') continue;
+
+      await otpField.fill(otp);
+      await frame.getByRole('button', { name: /submit|verify|continue|confirm/i })
+        .first()
+        .click();
+      return;
+    } catch {
+      /* frame detached mid-check — outer poll will retry */
+    }
+  }
+}
 
 /**
  * Walk every frame on the page until `match` returns true, then hand back
