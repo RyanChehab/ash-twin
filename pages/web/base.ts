@@ -1,6 +1,19 @@
 import type { Page } from '@playwright/test';
 
 /**
+ * Shared wait budgets for page-object waits. Tuned once here so a slow CI or a
+ * fast localhost doesn't require scattered magic numbers across every page.
+ * QUICK: optimistic transitions that should be near-instant (popups, fancybox).
+ * MEDIUM: AJAX responses (cart adds, category loads).
+ * LONG: multi-step server work (payment redirects, report generation).
+ */
+export const WAIT = {
+  QUICK:  1_500,
+  MEDIUM: 10_000,
+  LONG:   30_000,
+} as const;
+
+/**
  * Chassis for every web page object.
  * Holds the raw Playwright Page reference and shared utilities every concrete
  * page needs (wait strategies, URL assertions, error detection).
