@@ -160,8 +160,8 @@ export class WebCustomer {
     await this.pages.checkoutProducts.continue();
   }
 
-  isOnCheckoutProducts(): boolean {
-    return this.pages.checkoutProducts.isCurrent();
+  async isOnCheckoutProducts(): Promise<boolean> {
+    return await this.pages.checkoutProducts.isCurrent();
   }
 
   async fillCheckout(info: CheckoutUserInfo): Promise<void> {

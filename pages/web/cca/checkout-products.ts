@@ -7,10 +7,11 @@ import { BasePage } from '../base';
  */
 
 export class CheckoutProductsPage extends BasePage {
-  readonly checkoutButton: Locator = this.page.locator('#checkoutBtn');
 
-  isCurrent(): boolean {
-    return this.page.url().includes('checkout_products_list');
+  readonly checkoutButton: Locator = this.page.locator('#btns #checkoutBtn');
+
+  async isCurrent(): Promise<boolean> {
+    return await this.checkoutButton.isVisible();
   }
 
   async continue(): Promise<void> {
