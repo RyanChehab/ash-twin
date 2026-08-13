@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test';
-import { BasePage } from '../base';
+import { BasePage, WAIT } from '../base';
 import type { Event } from '../../../types/event';
 
 /**
@@ -47,11 +47,13 @@ export class EventPage extends BasePage {
     const closer = this.page.locator(
       '#popup .btns a, .fancybox-wrap.fancybox-opened a[href*="fancybox.close"], .fancybox-wrap.fancybox-opened .fancybox-close',
     ).first();
+    // waitFor throws TimeoutError when no popup renders in QUICK — that's the
+    // expected shape for the no-popup path, so we narrow the catch to it.
     try {
-      await closer.waitFor({ state: 'visible', timeout: 1500 });
+      await closer.waitFor({ state: 'visible', timeout: WAIT.QUICK });
       await closer.click();
-    } catch {
-      /* no popup on this event — nothing to do */
+    } catch (err) {
+      if (!(err instanceof Error) || err.name !== 'TimeoutError') throw err;
     }
   }
 
@@ -74,20 +76,25 @@ export class EventPage extends BasePage {
   async addToCart(categoryId: number): Promise<void> {
     await this.page.locator(`#li_${categoryId} .mini_add_to_cart`).click();
     // Cart is added via AJAX; the sticky checkout button un-hides on success.
-    await this.checkoutButton.waitFor({ state: 'visible', timeout: 10_000 });
+    await this.checkoutButton.waitFor({ state: 'visible', timeout: WAIT.MEDIUM });
   }
 
   /**
    * Check any required event-level agreement boxes (T&C, age restrictions).
    * Both are gated by `event_terms` / `event_age_restrictions` on the event —
    * hidden entirely when unset, so this method is a no-op for those events.
+   *
+   * The inputs themselves are visually hidden (styled radios/checkboxes); the
+   * wrapping <label> is the human click target, so we click the label to get
+   * real actionability instead of forcing a click through Playwright's checks.
    */
   async acceptTerms(): Promise<void> {
-    const boxes = this.page.locator(
-      '#terms input[name="event_terms"], #terms input[name="event_age_restrictions"]',
-    );
-    const n = await boxes.count();
-    for (let i = 0; i < n; i++) await boxes.nth(i).check({ force: true });
+    for (const name of ['event_terms', 'event_age_restrictions'] as const) {
+      const input = this.page.locator(`#terms input[name="${name}"]`);
+      if ((await input.count()) === 0) continue;
+      if (await input.isChecked()) continue;
+      await this.page.locator(`#terms label:has(input[name="${name}"])`).click();
+    }
   }
 
   async proceedToCheckout(): Promise<void> {

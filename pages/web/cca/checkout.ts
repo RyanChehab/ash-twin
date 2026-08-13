@@ -85,7 +85,10 @@ export class CheckoutPage extends BasePage {
    */
   async acceptTerms(): Promise<void> {
     if ((await this.termsCheckbox.count()) === 0) return;
-    await this.termsCheckbox.check({ force: true });
+    if (await this.termsCheckbox.isChecked()) return;
+    // Input is visually hidden by the theme; click the wrapping label so
+    // Playwright's actionability checks run against the real click target.
+    await this.page.locator('label:has(input[name="checkout_terms"])').click();
   }
 
   // ── User info (placeholder — see note above) ───────────────────────────
