@@ -1,6 +1,7 @@
 import type { LandingPage } from './cca/landing';
 import type { EventPage } from './cca/event';
 import type { EventDatesPage } from './cca/event-dates';
+import type { CheckoutProductsPage } from './cca/checkout-products';
 import type { CheckoutPage } from './cca/checkout';
 import type { ConfirmationPage } from './cca/confirmation';
 import type { AuthPage } from './cca/auth';
@@ -11,10 +12,11 @@ import type { AuthPage } from './cca/auth';
  * (AntoineWebPages, VirginWebPages) will add extra pages beyond this base.
  */
 export interface WebPages {
-  landing:      LandingPage;
-  event:        EventPage;
-  eventDates:   EventDatesPage;
-  checkout:     CheckoutPage;
-  confirmation: ConfirmationPage;
-  auth:         AuthPage;
+  landing:        LandingPage;
+  event:          EventPage;
+  eventDates:     EventDatesPage;
+  checkoutProducts: CheckoutProductsPage;
+  checkout:       CheckoutPage;
+  confirmation:   ConfirmationPage;
+  auth:           AuthPage;
 }

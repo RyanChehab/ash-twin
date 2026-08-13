@@ -4,6 +4,7 @@ import type { WebPages } from './types';
 import { LandingPage } from './cca/landing';
 import { EventPage } from './cca/event';
 import { EventDatesPage } from './cca/event-dates';
+import { CheckoutProductsPage } from './cca/checkout-products';
 import { CheckoutPage } from './cca/checkout';
 import { ConfirmationPage } from './cca/confirmation';
 import { AuthPage } from './cca/auth';
@@ -19,11 +20,12 @@ export function webPages(page: Page, tenant: TenantConfig): WebPages {
   // if (tenant.name === 'virgin')  return virginWebPages(page);
 
   return {
-    landing:      new LandingPage(page),
-    event:        new EventPage(page),
-    eventDates:   new EventDatesPage(page),
-    checkout:     new CheckoutPage(page),
-    confirmation: new ConfirmationPage(page),
-    auth:         new AuthPage(page),
+    landing:        new LandingPage(page),
+    event:          new EventPage(page),
+    eventDates:     new EventDatesPage(page),
+    checkoutProducts: new CheckoutProductsPage(page),
+    checkout:       new CheckoutPage(page),
+    confirmation:   new ConfirmationPage(page),
+    auth:           new AuthPage(page),
   };
 }
