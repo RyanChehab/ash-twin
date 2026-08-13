@@ -156,11 +156,6 @@ export class WebCustomer {
     await this.pages.event.proceedToCheckout();
   }
 
-  /**
-   * Advance from the addons/products interstitial to the checkout form. When
-   * we later add addon/product interactions, they go here as separate verbs
-   * (e.g. `addAddonToCart`, `pickProduct`) that run before this one.
-   */
   async proceedFromProducts(): Promise<void> {
     await this.pages.checkoutProducts.continue();
   }
