@@ -219,16 +219,46 @@ export class Resolver {
     const clauses: string[] = ['al.addonlink_event_id = e.event_id'];
     const params: unknown[] = [];
 
+    // Identity / link predicates on `addonlink`
+    if (cond.addonId !== undefined) {
+      clauses.push('al.addonlink_addon_id = ?');
+      params.push(cond.addonId);
+    }
     if (cond.eventId !== undefined) {
       clauses.push('al.addonlink_event_id = ?');
       params.push(cond.eventId);
     }
+    if (cond.categoryId !== undefined) {
+      clauses.push('al.addonlink_category_id = ?');
+      params.push(cond.categoryId);
+    }
+
+    // Addon row (event where event_addon = 1) predicates
     if (cond.status) {
       clauses.push('ae.event_status = ?');
       params.push(cond.status);
     }
     if (cond.webshop === true)  clauses.push('ae.event_webshop = 1');
     if (cond.webshop === false) clauses.push('ae.event_webshop = 0');
+
+    if (cond.showOnCheckout === true)  clauses.push('ae.event_show_on_checkout = 1');
+    if (cond.showOnCheckout === false) clauses.push('ae.event_show_on_checkout = 0');
+
+    if (cond.stockShared === true)  clauses.push('ae.event_stock_shared = 1');
+    if (cond.stockShared === false) clauses.push('ae.event_stock_shared = 0');
+
+    if (cond.minPrice !== undefined) {
+      clauses.push('ae.event_current_price >= ?');
+      params.push(cond.minPrice);
+    }
+    if (cond.maxPrice !== undefined) {
+      clauses.push('ae.event_current_price <= ?');
+      params.push(cond.maxPrice);
+    }
+    if (cond.orderLimit !== undefined) {
+      clauses.push('ae.event_order_limit = ?');
+      params.push(cond.orderLimit);
+    }
 
     // Optional join into the addon's category to filter by category shape.
     let categoryJoin = '';

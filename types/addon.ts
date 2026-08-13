@@ -22,12 +22,10 @@ export interface AddonLink {
 
 
 export interface AddonCriteria {
-  // Identity / link
   addonId?:        number;   // addonlink_addon_id
   eventId?:        number;   // addonlink_event_id — parent event scope
   categoryId?:     number;   // addonlink_category_id — category-scoped link
 
-  // Addon row (event where event_addon = 1) fields
   status?:         'pub' | 'unpub' | 'nosal';   // event_status
   webshop?:        boolean;                     // event_webshop
   showOnCheckout?: boolean;                     // event_show_on_checkout
