@@ -43,3 +43,43 @@ test(15, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
     await restoreRecaptcha();
   }
 });
+
+test(16, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
+  test.setTimeout(120_000);   // paid checkout + 3DS challenge
+
+  const restoreRecaptcha = await db.overrideConfig('recaptcha_enabled', '0');
+  try {
+    const creds = requireTestCustomer(tenant);
+    const event = await resolver.event(events.normal);
+    const category = await resolver.category({
+      eventId:      event.id,
+      numbering:    'none',
+      webPublished: true,
+      soldout:      false,
+    });
+
+    await customer.openAuth();
+    await customer.login(creds);
+
+    await customer.openEvent(event);
+    await customer.pickCategory(category);
+    await customer.setQuantity(category, 1);
+    await customer.acceptTerms();
+    await customer.addToCart(category);
+    await customer.proceedToCheckout();
+
+    expect(await customer.isOnCheckoutProducts()).toBe(true);
+    await customer.proceedFromProducts();
+    expect(await customer.isOnCheckoutProducts()).toBe(false);
+
+    await customer.payWith('cybersource_unified', cards.visa3ds);
+
+    const ticket = await customer.readTicket();
+    expect(ticket.orderRef).toBeTruthy();
+    expect(ticket.status).toBe('paid');
+
+    feedback(`event ${event.id} category ${category.id}: 3DS paid order ${ticket.orderRef}`);
+  } finally {
+    await restoreRecaptcha();
+  }
+});
