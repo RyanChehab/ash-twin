@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test';
-import { BasePage } from '../base';
+import { BasePage, WAIT } from '../base';
 
 
 export class EventDatesPage extends BasePage {
@@ -17,6 +17,6 @@ export class EventDatesPage extends BasePage {
   async pickDate(subEventId: number): Promise<void> {
     const row = this.page.locator(`li:has(input[name="event-time"][value="${subEventId}"])`);
     await row.locator('a').first().click();
-    await this.page.locator('#list.rd').waitFor({ state: 'visible', timeout: 10_000 });
+    await this.page.locator('#list.rd').waitFor({ state: 'visible', timeout: WAIT.MEDIUM });
   }
 }
