@@ -6,8 +6,10 @@ import type { Ticket } from '../types/ticket';
 import type { WebPages } from '../pages/web/types';
 import type { CheckoutUserInfo } from '../pages/web/cca/checkout';
 import type { RegisterData, LoginCreds } from '../types/user';
+import type { TestCard } from '../payments';
 import { webPages } from '../pages/web/factory';
 import { Resolver } from '../helpers/resolver';
+import { getPaymentStrategy } from '../payments';
 
 /**
  * WebCustomer actor — orchestrates the customer-facing purchase flow via the
@@ -170,6 +172,25 @@ export class WebCustomer {
 
   async submitCheckout(): Promise<void> {
     await this.pages.checkout.submit();
+  }
+
+  // ── Payment ────────────────────────────────────────────────────────────
+
+  async payWith(paymentKey: string, testCard?: TestCard): Promise<void> {
+    const available = await this.pages.checkout.readAvailableHandlings();
+    if (!available.some(h => h.paymentKey === paymentKey)) {
+      const list = available.map(h => h.paymentKey).join(', ') || '(none)';
+      throw new Error(
+        `Payment '${paymentKey}' not rendered on this checkout. Available: [${list}]`,
+      );
+    }
+    const strategy = getPaymentStrategy(paymentKey);
+    const handlingLabel = await this.pages.checkout.pickHandlingByPayment(paymentKey);
+    const ctx = { handlingLabel, testCard };
+
+    await strategy.prepare?.(this.page, ctx);
+    await this.pages.checkout.submit();
+    await strategy.complete(this.page, ctx);
   }
 
   // ── Read confirmation result ───────────────────────────────────────────
