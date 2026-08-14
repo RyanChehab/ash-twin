@@ -93,8 +93,52 @@ The registry used to also carry `feature`, `surface`, and `validatedOn` fields, 
 
 When we build the coverage dashboard, richer metadata will land in a real schema — not in dot-separated tag strings.
 
+## Verify both sides — DB and DOM
+
+Tests that just check the frontend can pass while the DB says something totally different. The signup test (id 10) is the gold standard for the mixed-verification pattern:
+
+```ts
+test(10, 'vitality', async ({ customer, db }) => {
+  const email = `ash.twin.${Date.now()}@example.com`;
+  try {
+    await customer.openAuth();
+    await customer.fillRegister(validBase(email));
+    await customer.enableTestCaptchaBypass();
+    await customer.submitRegisterProgrammatically();
+
+    const activationPath = await db.activationUrlFor(email);      // DB: user + auth row exist
+    expect(activationPath).toContain('/activation.php?uar=');
+
+    await customer.activate(activationPath);
+
+    expect(await db.isUserActive(email)).toBe(true);              // DB: user active, auth cleared
+    expect(await customer.isSignedIn()).toBe(true);               // DOM: header shows signed-in state
+  } finally {
+    await db.deleteUserByEmail(email);                            // cleanup
+  }
+});
+```
+
+Every step is verified on both sides, and the `finally` cleans the row even if the test throws mid-body. Purchase tests should follow the same shape once we've added `db.orderById()` / `db.deleteOrderById()` — the confirmation page's `h1.success` can lie about the order's actual state.
+
+## Long-running tests raise their own timeout
+
+Payment tests run through real sandbox gateways and need more time than the default 30s:
+
+```ts
+test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+  test.setTimeout(120_000);   // gateway sandbox + 3DS
+  // ...
+});
+```
+
+Raise per-test, not globally. Auth tests still fail loudly at 30s when something's stuck.
+
 ## Rules to write down
 
 - **Every test lives in `specs/registry.json`.** The wrapper enforces this at import time.
 - **IDs are permanent.** Renaming a test's title in the registry is free; changing its id breaks external references.
 - **Test files under `specs/vitality/` produce `@vitality`-tagged tests.** The wrapper does this automatically today. When we add other categories, we'll grow the wrapper to reflect folder structure.
+- **Verify both sides.** Frontend assertions catch UI regressions; DB assertions catch state corruption. Together they catch both.
+- **Clean up in `finally`.** Any test that creates a user / order / row cleans it up unconditionally.
+- **Own your timeout.** Tests that hit gateway sandboxes call `test.setTimeout(...)` explicitly at the top.

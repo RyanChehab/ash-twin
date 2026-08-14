@@ -86,6 +86,57 @@ Direct id / name lookups (`resolver.event(42)`) skip these filters — if the ca
 
 Clicking a date option triggers AJAX that loads categories in-place. The URL stays at `/{type}/{main_id}` throughout. No form submission, no submit button.
 
+## The products interstitial hijacks the checkout URL
+
+When the cart is eligible for addons or on-checkout products, SquareMaze renders `checkout_products_list.tpl` instead of the real preview — but at the same URL (`checkout.php?action=preview`). URL-based detection can't tell them apart. Use DOM instead: `#btns #checkoutBtn` (or the presence of the products listing) uniquely identifies the interstitial. See `pages/web/cca/checkout-products.ts`.
+
+## `configuration` writes are shadowed by a file cache
+
+`configuration` table reads route through a JSON cache file at `{squaremaze}/includes/tmp/{tenant}/cache/cached_config_data.dat`. `applyConfig()` in `model.config.php` reads from THAT file if it exists, and only falls back to DB when the file is missing.
+
+Every SquareMaze-side write (`updateField`, `save`, `deleteField`) always unlinks the cache file so the next read rebuilds from DB. If we write to `configuration` from outside SquareMaze (e.g. via `db.overrideConfig` in ash-twin), we MUST also invalidate the cache — otherwise the DB write is silently a no-op and the site keeps serving the stale value.
+
+**Invalidation paths:**
+- **Filesystem access** (cca-local): `fs.unlink('{squaremaze}/includes/tmp/{tenant}/cache/cached_config_data.dat')` — same-machine, trivial.
+- **HTTP endpoint** (staging, prod-ish): `admin/index.php?action=clearcache` (requires admin session).
+
+The plugin's registered `handling_payment` column has the same issue — anywhere SquareMaze reads plugin-provided config, the cache file is authoritative until deleted.
+
+## The captcha test-mode bypass
+
+`skipCaptcha=1` in a POST body short-circuits **both** captcha layers (reCAPTCHA and the fallback nospam), but only when `isTestVersion()` returns true server-side:
+
+```php
+// basics.php:2727-2731
+function validateCaptcha($nospam, $fieldName = null, $bypassNoSpam = false) {
+    if($_REQUEST['skipCaptcha'] && isTestVersion()) return true;    // ← the bypass
+    $valid = Plugin::call('readValidateCaptcha', $nospam, $fieldName);
+    if(!is_null($valid)) return $valid;                              // reCAPTCHA plugin
+    if(!$bypassNoSpam) { /* nospam check */ }
+    return true;
+}
+```
+
+`isTestVersion()` = `strpos(INSTALL_VERSION, 'staging') !== false || strpos(INSTALL_VERSION, 'dev') !== false`. The source file has `INSTALL_VERSION = "latest-dev"`, but deploy pipelines can override with a version tag that contains neither string — at which point the bypass is silently ignored server-side even though the request carries it.
+
+**When test 10 (signup) fails on staging with "No user found" and the trace shows `skipCaptcha=1` was sent** — the diagnosis is almost always `INSTALL_VERSION` on the staging deploy missing the `staging`/`dev` marker. Fix on the SquareMaze deploy side (append `-staging` to the version), not on ash-twin's side.
+
+## `handling_payment` ↔ `eph_*.php` filename convention
+
+The `handling` table's `handling_payment` column stores the middle segment of the payment plugin's filename. SquareMaze loads via `plugin::load('eph_' . $this->handling_payment)` at runtime (`model.handling.php:918`):
+
+| DB `handling_payment` | Plugin file |
+|---|---|
+| `free` | `eph_free.php` |
+| `complimentary` | `eph_complimentary.php` |
+| `checkoutframes` | `eph_checkoutframes.php` |
+| `cybersource_unified` | `eph_cybersource_unified.php` |
+| `ngenius` | `eph_ngenius.php` |
+
+Every radio on the checkout preview carries `data-payment-type="{handling_payment}"`, so the DOM ↔ DB ↔ plugin filename are one identity, stable across tenants. Our `payments/{name}.ts` files mirror the same naming.
+
+The `handling_shipment` column follows the same convention with `esm_*.php` shipment plugins.
+
 ## Where to find the truth
 
 - **Table columns**: `includes/models/model.<entity>.php` → the `$_columns` array

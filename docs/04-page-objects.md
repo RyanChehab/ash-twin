@@ -6,13 +6,16 @@
 
 ```
 pages/web/
-├── base.ts              — abstract BasePage (chassis)
+├── base.ts              — abstract BasePage + shared WAIT budgets
 ├── types.ts             — WebPages interface (the bundle contract)
 ├── factory.ts           — webPages(page, tenant) picks the right set
 ├── cca/                 — default-theme pages (used by cca)
 │   ├── landing.ts
+│   ├── auth.ts
 │   ├── event.ts
-│   ├── checkout.ts
+│   ├── event-dates.ts
+│   ├── checkout-products.ts   — the addons / shop-products interstitial
+│   ├── checkout.ts            — the checkout preview (handling radios, submit)
 │   └── confirmation.ts
 └── tenants/             — future per-tenant/theme overrides
     ├── capetown/        — adrea, blublood
@@ -91,12 +94,49 @@ export class AntoineEventPage extends EventPage {
 
 Everything else inherits. Add branch to factory.
 
+## The checkout page's handling API
+
+`checkout.ts` exposes two primitives that keep tests + payment strategies out of numeric ID land:
+
+```ts
+async readAvailableHandlings(): Promise<RenderedHandling[]>
+// Reads every input[name="handling_id"] the server rendered and returns
+// { id, paymentKey, feeLabel } tuples. paymentKey mirrors data-payment-type
+// (matches the eph_{name}.php plugin filename).
+
+async pickHandlingByPayment(paymentKey: string): Promise<Locator>
+// Clicks the label wrapping the matching radio (radios are visually
+// hidden on CCA — the label handles the toggle) and returns the <label>
+// Locator so payment strategies can scope their own selectors to it.
+```
+
+`RenderedHandling` is defined inline in `checkout.ts` and NOT in `types/` — only the checkout page produces it, only the actor consumes it. See [10-payments.md](./10-payments.md) for how strategies build on top.
+
+The address form (`fillUserInfo`) is a placeholder — CCA overrides the template with emirate/area `customSelect` dropdowns that need dedicated handling. Fine for the current test set (all use shipment methods that don't require a physical address); revisit when we tackle shipment-required flows.
+
+## The products interstitial
+
+`checkout-products.ts` maps to the `checkout_products_list.tpl` interstitial that SquareMaze renders between the event page and the real checkout preview when the cart is eligible for addons or shop products. The URL doesn't tell you when you're on it (the template shares URL with the preview) — detection is DOM-based via `#btns #checkoutBtn`.
+
+```ts
+async isCurrent(): Promise<boolean> {
+  return await this.checkoutButton.isVisible();
+}
+async continue(): Promise<void> {
+  await this.checkoutButton.click();
+  await this.waitReady();
+}
+```
+
+Tests skip it explicitly through the actor: `if (await customer.isOnCheckoutProducts()) await customer.proceedFromProducts()`. Not folded into `proceedToCheckout` because future tests will interact with addons/products before advancing.
+
 ## Selector conventions
 
 - **Prefer stable selectors**: IDs, `name=` attributes, `getByRole`
 - **Avoid**: nth-child, sibling traversal, DOM hierarchy assumptions
 - **One source of truth**: every selector lives in exactly one page-object file
 - **No business logic** in page objects — that's the actor's job
+- **For gateway iframes (Cybersource, Frames):** re-scan `page.frames()` after every state transition and match by URL substring — the SDKs swap iframes as they change screens, so cached locators go stale. See [10-payments.md](./10-payments.md) for the pattern.
 
 ## Gotchas learned from the CCA event page
 

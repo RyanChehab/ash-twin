@@ -3,18 +3,6 @@ import { events } from '../../helpers/event-presets';
 import { requireTestCustomer } from '../../helpers/tenant';
 import { cards } from '../../payments/cybersource_unified';
 
-/**
- * Every purchase spec here needs `recaptcha_enabled` off — staging enforces it
- * on the AJAX add-to-cart path. Disable it before every test; deliberately
- * NOT restoring afterwards so the DB stays in a testable state across the run
- * (and, crucially, if a test crashes mid-run, we don't leave reCAPTCHA off
- * because of a half-run restore either — it's a single stable state).
- * Write is idempotent: 0 → 0 costs the same as 1 → 0.
- */
-test.beforeEach(async ({ db }) => {
-  await db.overrideConfig('recaptcha_enabled', '0');
-});
-
 
 test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox

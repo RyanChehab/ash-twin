@@ -13,14 +13,16 @@ Granular documentation of the framework. Each file covers one concern; read in o
 7. [Tenant config](./07-tenant-config.md) — per-tenant JSON schema
 8. [SquareMaze DB conventions](./08-squaremaze-conventions.md) — table/column naming rules (read before writing SQL)
 9. [Writing tests](./09-writing-tests.md) — the registry, the `test(id, fn)` wrapper, and the folder-based tag convention
+10. [Payments](./10-payments.md) — one strategy per gateway; how `payWith(paymentKey, card, opts)` works
 
 ## Reference layout
 
 ```
 ash-twin/
 ├── actors/           — business orchestrators (WebCustomer, Admin)
-├── helpers/          — Resolver, DbClient
+├── helpers/          — Resolver, DbClient, tenant helpers, test wrapper
 ├── pages/            — page objects (base + per-tenant)
+├── payments/         — one strategy per gateway (cybersource_unified, ...)
 ├── fixtures/         — test dependency wiring
 ├── tenants/          — per-tenant JSON config
 ├── types/            — domain type definitions
