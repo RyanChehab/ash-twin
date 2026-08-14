@@ -14,5 +14,7 @@
   { "id": 13, "title": "wrong credentials leave the user signed out" },
   { "id": 14, "title": "an existing user logs in with valid credentials" },
   { "id": 15, "title": "an authenticated user completes a GA purchase paying by card via cybersource unified checkout" },
-  { "id": 16, "title": "an authenticated user completes a GA purchase paying by a 3DS card via cybersource unified checkout" }
+  { "id": 16, "title": "an authenticated user completes a GA purchase paying by a 3DS card via cybersource unified checkout" },
+  { "id": 17, "title": "an authenticated user cancels the 3DS challenge and the payment fails" },
+  { "id": 18, "title": "an anonymous user is redirected to register when proceeding to checkout" }
 ]
