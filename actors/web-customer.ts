@@ -96,6 +96,12 @@ export class WebCustomer {
 
   async isSignedIn(): Promise<boolean> {
     return this.pages.auth.isSignedIn();
+  } 
+  
+  async isOnAuthPage(): Promise<boolean> {
+    if (await this.pages.auth.loginForm.isVisible()) return true;
+    if (await this.pages.auth.registerForm.isVisible()) return true;
+    return false;
   }
 
   /**
@@ -176,7 +182,11 @@ export class WebCustomer {
 
   // ── Payment ────────────────────────────────────────────────────────────
 
-  async payWith(paymentKey: string, testCard?: TestCard): Promise<void> {
+  async payWith(
+    paymentKey: string,
+    testCard?: TestCard,
+    opts?: Record<string, unknown>,
+  ): Promise<void> {
     const available = await this.pages.checkout.readAvailableHandlings();
     if (!available.some(h => h.paymentKey === paymentKey)) {
       const list = available.map(h => h.paymentKey).join(', ') || '(none)';
@@ -186,7 +196,7 @@ export class WebCustomer {
     }
     const strategy = getPaymentStrategy(paymentKey);
     const handlingLabel = await this.pages.checkout.pickHandlingByPayment(paymentKey);
-    const ctx = { handlingLabel, testCard };
+    const ctx = { handlingLabel, testCard, opts };
 
     await strategy.prepare?.(this.page, ctx);
     await this.pages.checkout.submit();

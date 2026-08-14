@@ -22,10 +22,11 @@ import type { Frame, Page } from '@playwright/test';
 export const cybersource_unified: PaymentStrategy = {
   paymentKey: 'cybersource_unified',
 
-  async complete(page, { testCard }) {
+  async complete(page, { testCard, opts }) {
     if (!testCard) {
       throw new Error(`cybersource_unified.complete requires a testCard`);
     }
+    const cancelChallenge = !!opts?.cancelChallenge;
 
     // 1. Wait for the plugin's form + SDK global.
     await page.waitForSelector('#payment-form', { timeout: 20_000 });
@@ -84,7 +85,11 @@ export const cybersource_unified: PaymentStrategy = {
       if ((await successHeading.count()) > 0 && await successHeading.first().isVisible().catch(() => false)) {
         return;
       }
-      await tryComplete3dsChallenge(page, '1234');
+      if (cancelChallenge) {
+        await tryCancel3dsChallenge(page);
+      } else {
+        await tryComplete3dsChallenge(page, '1234');
+      }
       await page.waitForTimeout(500);
     }
     throw new Error(
@@ -111,6 +116,27 @@ async function tryComplete3dsChallenge(page: Page, otp: string): Promise<void> {
       await frame.getByRole('button', { name: /submit|verify|continue|confirm/i })
         .first()
         .click();
+      return;
+    } catch {
+      /* frame detached mid-check — outer poll will retry */
+    }
+  }
+}
+
+/**
+ * Abort the 3DS challenge by clicking its Cancel button. Cybersource treats
+ * user-cancellation as a failed payment and either surfaces `h1.fail` on the
+ * result page or re-shows the widget with an error — both are terminal for
+ * our poll (heading match, or eventual timeout).
+ */
+async function tryCancel3dsChallenge(page: Page): Promise<void> {
+  for (const frame of page.frames()) {
+    if (!/cardinal|centinel|3ds/i.test(frame.url())) continue;
+    try {
+      const cancelBtn = frame.getByRole('button', { name: /cancel/i }).first();
+      if ((await cancelBtn.count()) === 0) continue;
+      if (!(await cancelBtn.isVisible())) continue;
+      await cancelBtn.click();
       return;
     } catch {
       /* frame detached mid-check — outer poll will retry */

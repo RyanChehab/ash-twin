@@ -12,10 +12,16 @@ export interface TestCard {
  * Context passed to strategy hooks. Scoped to the picked handling's <label>
  * so strategies don't accidentally interact with sibling handling widgets
  * that share DOM ids (iframes, gateway scripts).
+ *
+ * `opts` is a per-gateway grab bag — each strategy interprets its own keys
+ * (e.g. cybersource_unified reads `cancelChallenge` to abort a 3DS challenge
+ * instead of completing it). Kept generic here so the base contract doesn't
+ * balloon with every gateway's quirks.
  */
 export interface PaymentContext {
   handlingLabel: Locator;
   testCard?:     TestCard;
+  opts?:         Record<string, unknown>;
 }
 
 /**
