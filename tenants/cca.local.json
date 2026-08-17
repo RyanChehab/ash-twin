@@ -1,6 +1,7 @@
 {
   "name": "cca",
   "env": "local",
+  "theme": "default",
 
   "baseUrl": "https://cca",
   "webUrl":  "https://cca",

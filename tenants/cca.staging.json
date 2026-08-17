@@ -1,6 +1,7 @@
 {
   "name": "cca",
   "env": "staging",
+  "theme": "default",
 
   "baseUrl": "https://staging.coca-cola-arena.com",
   "webUrl":  "https://staging.coca-cola-arena.com",

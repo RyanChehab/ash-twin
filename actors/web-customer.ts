@@ -4,7 +4,7 @@ import type { Event } from '../types/event';
 import type { Category } from '../types/category';
 import type { Ticket } from '../types/ticket';
 import type { WebPages } from '../pages/web/types';
-import type { CheckoutUserInfo } from '../pages/web/cca/checkout';
+import type { CheckoutUserInfo } from '../pages/web/default/checkout';
 import type { RegisterData, LoginCreds } from '../types/user';
 import type { TestCard } from '../payments';
 import { webPages } from '../pages/web/factory';
