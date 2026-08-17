@@ -1,11 +1,16 @@
-import { test, expect } from '../../helpers/test';
-import type { RegisterData } from '../../types/user';
+import { test, expect } from '../../../helpers/test';
+import type { RegisterData } from '../../../types/user';
 
 /**
- * Auth vitality specs for the default theme / cca.
+ * Native auth vitality specs — every squaremaze-frontend tenant runs these
+ * (default theme AND capetown theme). The tests here only exercise fields
+ * guaranteed to be rendered on both themes; theme-specific field checks
+ * (e.g. DOB required only when `show_dob=1`) live in `default/auth.spec.ts`
+ * or `capetown/auth.spec.ts`.
  *
- *   1 –9   register form — client-side validation progression (no POST)
- *  10      signup end-to-end — register + activate + verify + cleanup
+ *   1,2,3,5,6,7,8,9   register form — client-side validation
+ *   10                signup end-to-end — register + activate + verify + cleanup
+ *   11,12,13,14       login form
  */
 
 /** A base RegisterData that would pass every client-side rule. */
@@ -43,13 +48,6 @@ test(3, "vitality", async ({ customer }) => {
   await customer.fillRegister({ ...validBase(), email: 'not-an-email' });
   await customer.submitRegister();
   expect(await customer.hasRegisterFieldError('user_email')).toBe(true);
-});
-
-test(4, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), dob: '' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_dob')).toBe(true);
 });
 
 test(5, "vitality", async ({ customer }) => {
