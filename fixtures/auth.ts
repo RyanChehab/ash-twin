@@ -56,7 +56,32 @@ export const authFixtures = base.extend<{
     const ctx = await browser.newContext({ baseURL: tenant.webUrl, ignoreHTTPSErrors: true });
     await suppressCookieBanner(ctx, tenant);
     const page = await ctx.newPage();
+    await injectSkipCaptchaOnCustomerPosts(page, tenant);
     await use(page);
     await ctx.close();
   },
 });
+
+/**
+ * Append `skipCaptcha=1` to every form-encoded POST body that goes to the
+ * tenant's web host.
+ */
+async function injectSkipCaptchaOnCustomerPosts(page: Page, tenant: TenantConfig): Promise<void> {
+  const tenantHost = hostOf(tenant.webUrl);
+  await page.route('**/*', async (route, request) => {
+    if (request.method() !== 'POST') return route.continue();
+
+    let host: string;
+    try { host = new URL(request.url()).hostname; }
+    catch { return route.continue(); }
+    if (host !== tenantHost) return route.continue();
+
+    const contentType = request.headers()['content-type'] ?? '';
+    if (!contentType.startsWith('application/x-www-form-urlencoded')) return route.continue();
+
+    const body = request.postData() ?? '';
+    if (/(?:^|&)skipCaptcha=/.test(body)) return route.continue();   // already present
+    const newBody = body.length ? `${body}&skipCaptcha=1` : 'skipCaptcha=1';
+    await route.continue({ postData: newBody });
+  });
+}

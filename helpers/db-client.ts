@@ -76,15 +76,20 @@ export class DbClient {
    * Returns the path (`/activation.php?uar=...`), not a full URL.
    */
   async activationUrlFor(email: string): Promise<string> {
-    const row = await this.one<{ user_id: number; active: string | null }>(
-      `SELECT u.user_id, a.active
-       FROM user u
-       JOIN auth a ON a.user_id = u.user_id
-       WHERE u.user_email = ?
-       LIMIT 1`,
-      [email],
+    // Read-after-write can race on staging (commit lag + potential replica
+    // fan-out), so retry up to ~1.5s before giving up. Happy path is one query.
+    const row = await withRetry(() =>
+      this.one<{ user_id: number; active: string | null }>(
+        `SELECT u.user_id, a.active
+         FROM user u
+         JOIN auth a ON a.user_id = u.user_id
+         WHERE u.user_email = ?
+         LIMIT 1`,
+        [email],
+      ),
+      r => !!r && !!r.active,
     );
-    if (!row) throw new Error(`No user found with email ${email}`);
+    if (!row) throw new Error(`No user found with email ${email} after retries`);
     if (!row.active) throw new Error(`User ${email} has no pending activation (auth.active is NULL)`);
     const token = Buffer.from(`${row.user_id}|activate|${row.active}`).toString('base64');
     return `/activation.php?uar=${encodeURIComponent(token)}`;
@@ -92,13 +97,18 @@ export class DbClient {
 
   /** True once activation cleared auth.active (NULL) and user.user_active flipped to 1. */
   async isUserActive(email: string): Promise<boolean> {
-    const row = await this.one<{ user_active: number; active: string | null }>(
-      `SELECT u.user_active, a.active
-       FROM user u
-       JOIN auth a ON a.user_id = u.user_id
-       WHERE u.user_email = ?
-       LIMIT 1`,
-      [email],
+    // Same race window as activationUrlFor — retry until the activation write
+    // (user.user_active = 1 AND auth.active = NULL) is visible.
+    const row = await withRetry(() =>
+      this.one<{ user_active: number; active: string | null }>(
+        `SELECT u.user_active, a.active
+         FROM user u
+         JOIN auth a ON a.user_id = u.user_id
+         WHERE u.user_email = ?
+         LIMIT 1`,
+        [email],
+      ),
+      r => !!r && r.user_active === 1 && r.active === null,
     );
     return !!row && row.user_active === 1 && row.active === null;
   }
@@ -117,4 +127,18 @@ export class DbClient {
 function phpSerialize(value: string | number | boolean): string {
   const s = String(value);
   return `s:${s.length}:"${s}";`;
+}
+
+async function withRetry<T>(
+  read: () => Promise<T | null>,
+  ready: (row: T | null) => boolean,
+  attempts = 5,
+  gapMs = 300,
+): Promise<T | null> {
+  let row = await read();
+  for (let i = 1; i < attempts && !ready(row); i++) {
+    await new Promise(r => setTimeout(r, gapMs));
+    row = await read();
+  }
+  return row;
 }
