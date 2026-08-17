@@ -6,7 +6,7 @@ import type { TenantConfig } from '../types/tenant';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
-const TENANTS_DIR = path.join(__dirname, '..', 'tenants');
+const SITES_DIR = path.join(__dirname, '..', 'sites');
 
 function interpolate(value: unknown): unknown {
   if (typeof value === 'string') {
@@ -26,8 +26,8 @@ function interpolate(value: unknown): unknown {
 }
 
 function loadTenant(name: string, env: string): TenantConfig {
-  const file = path.join(TENANTS_DIR, `${name}.${env}.json`);
-  if (!fs.existsSync(file)) throw new Error(`Tenant config not found: ${file}`);
+  const file = path.join(SITES_DIR, `${name}.${env}.json`);
+  if (!fs.existsSync(file)) throw new Error(`Site config not found: ${file}`);
   const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
   const cfg = interpolate(raw) as TenantConfig & { db: { port: string | number } };
   cfg.db.port = Number(cfg.db.port);

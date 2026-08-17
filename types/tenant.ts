@@ -1,6 +1,6 @@
 /**
  * Contract for a single (tenant × env) configuration.
- * Loaded from tenants/{name}.{env}.json by fixtures/tenant.ts.
+ * Loaded from sites/{name}.{env}.json by fixtures/tenant.ts.
  */
 export interface TenantConfig {
   name: string;

@@ -121,7 +121,7 @@ test(10, "vitality", async ({ customer, db, feedback }) => {
 // ── Login form: validation, rejection, and success ────────────────────────
 //
 // Login tests rely on `tenant.users.testCustomer` already existing (and being
-// activated) in the tenant's DB. Set the creds in `tenants/{name}.{env}.json`.
+// activated) in the tenant's DB. Set the creds in `sites/{name}.{env}.json`.
 
 test(11, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
