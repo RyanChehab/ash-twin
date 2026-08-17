@@ -3,7 +3,7 @@ import { BasePage } from '../base';
 
 export type ConfirmationStatus = 'paid' | 'pending' | 'failed' | 'unknown';
 
-export class DefaultConfirmationPage extends BasePage {
+export class CapetownConfirmationPage extends BasePage {
   readonly successHeading:    Locator = this.page.locator('h1.success');
   readonly pendingHeading:    Locator = this.page.locator('h1.pending');
   readonly failHeading:       Locator = this.page.locator('h1.fail');

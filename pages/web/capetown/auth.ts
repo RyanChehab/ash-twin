@@ -12,7 +12,7 @@ import type { RegisterData, LoginCreds } from '../../../types/user';
  * on the client (form never POSTs) and each invalid input gets `.error`
  * added, with a `<label class="error">` inserted next to it.
  */
-export class DefaultAuthPage extends BasePage {
+export class CapetownAuthPage extends BasePage {
   readonly path = '/register';
 
   // ── Login form ──────────────────────────────────────────────────────────

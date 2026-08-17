@@ -6,7 +6,7 @@ import type { Event } from '../../../types/event';
  * Event detail page. Canonical URL is `/{event_type}/{event_id}/{slug}`.
  * We omit the slug (SquareMaze accepts URLs without it).
  */
-export class DefaultEventPage extends BasePage {
+export class CapetownEventPage extends BasePage {
   readonly categoryList:     Locator = this.page.locator('#list.rd');
   readonly categoryRadios:   Locator = this.page.locator('input[name="category_id"]');
   readonly addToCartButtons: Locator = this.page.locator('.mini_add_to_cart');

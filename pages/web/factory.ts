@@ -1,22 +1,23 @@
 import type { Page } from '@playwright/test';
 import type { TenantConfig } from '../../types/tenant';
 import type { WebPages } from './types';
-import { LandingPage } from './default/landing';
-import { EventPage } from './default/event';
-import { EventDatesPage } from './default/event-dates';
-import { CheckoutProductsPage } from './default/checkout-products';
-import { CheckoutPage } from './default/checkout';
-import { ConfirmationPage } from './default/confirmation';
-import { AuthPage } from './default/auth';
+import { DefaultLandingPage } from './default/landing';
+import { DefaultEventPage } from './default/event';
+import { DefaultEventDatesPage } from './default/event-dates';
+import { DefaultCheckoutProductsPage } from './default/checkout-products';
+import { DefaultCheckoutPage } from './default/checkout';
+import { DefaultConfirmationPage } from './default/confirmation';
+import { DefaultAuthPage } from './default/auth';
+import { CapetownLandingPage } from './capetown/landing';
+import { CapetownEventPage } from './capetown/event';
+import { CapetownEventDatesPage } from './capetown/event-dates';
+import { CapetownCheckoutProductsPage } from './capetown/checkout-products';
+import { CapetownCheckoutPage } from './capetown/checkout';
+import { CapetownConfirmationPage } from './capetown/confirmation';
+import { CapetownAuthPage } from './capetown/auth';
 
-/**
- * Return the WebPages bundle for the tenant's theme.
- *
- * Dispatches on `tenant.theme` — declared per-tenant in `tenants/*.json`,
- * NOT inferred from `tenant.name`. Adding a new tenant on an existing theme
- * is a JSON edit (no code change). Adding a new theme is a new bundle
- * function here plus the concrete page-object files under `pages/web/{theme}/`.
- */
+
+// Return the WebPages bundle for the tenant's theme.
 export function webPages(page: Page, tenant: TenantConfig): WebPages {
   switch (tenant.theme) {
     case 'default':  return defaultPages(page);
@@ -27,24 +28,26 @@ export function webPages(page: Page, tenant: TenantConfig): WebPages {
 
 function defaultPages(page: Page): WebPages {
   return {
-    landing:          new LandingPage(page),
-    event:            new EventPage(page),
-    eventDates:       new EventDatesPage(page),
-    checkoutProducts: new CheckoutProductsPage(page),
-    checkout:         new CheckoutPage(page),
-    confirmation:     new ConfirmationPage(page),
-    auth:             new AuthPage(page),
+    landing:          new DefaultLandingPage(page),
+    event:            new DefaultEventPage(page),
+    eventDates:       new DefaultEventDatesPage(page),
+    checkoutProducts: new DefaultCheckoutProductsPage(page),
+    checkout:         new DefaultCheckoutPage(page),
+    confirmation:     new DefaultConfirmationPage(page),
+    auth:             new DefaultAuthPage(page),
   };
 }
 
-// Placeholders — implement when we onboard adrea/blublood. Throwing here means
-// a tenant declared with `"theme": "capetown"` fails loud with the exact fix
-// instead of silently getting wrong pages.
-function capetownPages(_page: Page, tenant: TenantConfig): WebPages {
-  throw new Error(
-    `capetown page bundle not yet implemented (needed by tenant '${tenant.name}'). ` +
-    `Add pages/web/capetown/*.ts and finish the capetownPages() branch in pages/web/factory.ts.`,
-  );
+function capetownPages(page: Page, _tenant: TenantConfig): WebPages {
+  return {
+    landing:          new CapetownLandingPage(page),
+    event:            new CapetownEventPage(page),
+    eventDates:       new CapetownEventDatesPage(page),
+    checkoutProducts: new CapetownCheckoutProductsPage(page),
+    checkout:         new CapetownCheckoutPage(page),
+    confirmation:     new CapetownConfirmationPage(page),
+    auth:             new CapetownAuthPage(page),
+  };
 }
 
 function nextPages(_page: Page, tenant: TenantConfig): WebPages {

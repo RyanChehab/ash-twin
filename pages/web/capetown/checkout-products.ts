@@ -6,7 +6,7 @@ import { BasePage } from '../base';
  * is eligible for addons or on-checkout products.
  */
 
-export class DefaultCheckoutProductsPage extends BasePage {
+export class CapetownCheckoutProductsPage extends BasePage {
 
   readonly checkoutButton: Locator = this.page.locator('#btns #checkoutBtn');
 

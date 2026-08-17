@@ -18,7 +18,7 @@ export interface RenderedHandling {
   feeLabel:   string;   // data-fee-label — display text next to the fee
 }
 
-export class DefaultCheckoutPage extends BasePage {
+export class CapetownCheckoutPage extends BasePage {
   readonly path = '/checkout';
   readonly form:            Locator = this.page.locator('form#order-handling');
   readonly handlingRadios:  Locator = this.page.locator('input[name="handling_id"]');

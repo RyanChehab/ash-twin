@@ -2,7 +2,7 @@ import type { Locator } from '@playwright/test';
 import { BasePage, WAIT } from '../base';
 
 
-export class DefaultEventDatesPage extends BasePage {
+export class CapetownEventDatesPage extends BasePage {
   readonly dateRadios: Locator = this.page.locator('input[name="event-time"]');
 
   /** Whether the date-picker step is currently displayed (main event landed here). */

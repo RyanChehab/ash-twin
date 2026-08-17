@@ -5,7 +5,7 @@ import { BasePage } from '../base';
  * cca landing page — customer-facing event listing at "/".
  * Backed by `includes/templates/default/web/listing_shop.tpl`.
  */
-export class DefaultLandingPage extends BasePage {
+export class CapetownLandingPage extends BasePage {
   readonly path = '/';
   readonly eventCards: Locator = this.page.locator('.cell > article');
 
