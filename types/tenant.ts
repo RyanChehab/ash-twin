@@ -11,9 +11,6 @@ export interface TenantConfig {
 
   webUrl: string;
 
-  currency: string;
-  locale: string;
-
   users: TenantUsers;
   db: TenantDb;
 }

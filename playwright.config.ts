@@ -25,7 +25,29 @@ export default defineConfig({
   // `npx playwright test` runs them all in one shot with a combined report;
   // `--project=cca-local` narrows to one.
   projects: [
-    { name: 'cca-local',   metadata: { tenant: 'cca', env: 'local'   } },
-    { name: 'cca-staging', metadata: { tenant: 'cca', env: 'staging' } },
+    {
+      name: 'cca-local',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/default/**/*.spec.ts'],
+      metadata: { tenant: 'cca', env: 'local' },
+    },
+    {
+      name: 'cca-staging',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/default/**/*.spec.ts'],
+      metadata: { tenant: 'cca', env: 'staging' },
+    },
+    {
+      name: 'theagenda-local',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
+      metadata: { tenant: 'theagenda', env: 'local' },
+    },
+    {
+      name: 'theagenda-staging',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
+      metadata: { tenant: 'theagenda', env: 'staging' },
+    },
   ],
 });
