@@ -5,17 +5,10 @@
 export interface TenantConfig {
   name: string;
   env: 'local' | 'staging' | 'prod';
+  theme: 'default' | 'capetown' | 'next';
 
-  /**
-   * Base URL for PHP-served touchpoints (admin, pos, dashboard, scanner).
-   * For all tenants this points at the SquareMaze PHP infrastructure.
-   */
   baseUrl: string;
 
-  /**
-   * Customer-facing web URL. For Smarty tenants this equals baseUrl.
-   * For headless tenants (antoine, virgin) this points at their external React app.
-   */
   webUrl: string;
 
   currency: string;
