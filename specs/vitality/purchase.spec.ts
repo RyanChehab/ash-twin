@@ -4,6 +4,11 @@ import { requireTestCustomer } from '../../helpers/tenant';
 import { cards } from '../../payments/cybersource_unified';
 
 
+test.beforeAll(async ({ admin }) => {
+  await admin.clearCache();
+});
+
+
 test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox
 

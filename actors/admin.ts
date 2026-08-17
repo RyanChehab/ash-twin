@@ -12,6 +12,14 @@ export class Admin {
     private db: DbClient,
   ) {}
 
+  async clearCache(): Promise<void> {
+    const request = this.page.context().request;
+    const cacheUrl = `${this.tenant.baseUrl}/admin/index.php?p=cache&tab=8`;
+
+    await request.get(`${cacheUrl}&action=clearcache`);       // filesystem cache
+    await request.get(`${cacheUrl}&action=flush_cache_db`);   // Redis / phpfastcache
+  }
+
   /**
    * Locate an existing event in the tenant DB matching criteria.
    * Prefer this over createEvent when the test just needs *an* event to exist.
