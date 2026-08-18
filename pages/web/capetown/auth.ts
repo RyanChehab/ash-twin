@@ -74,16 +74,16 @@ export class CapetownAuthPage extends BasePage {
   }
 
   /**
-   * The city input becomes a <select> when the chosen country has a fixed
-   * city list (via `citiesMapping` in user_form.tpl); otherwise it stays a
-   * text <input>. Handle both shapes.
+   * The city field is config-gated on capetown (`legacyweb_config_show_city`)
+   * and its shape depends on country (select when `citiesMapping` covers the
+   * country, text input otherwise). Silently skip when neither is rendered.
    */
   async selectCity(value: string): Promise<void> {
     const select = this.page.locator('#user-register select[name="user_city"]');
     const input  = this.page.locator('#user-register input[name="user_city"]');
     if (await select.count() > 0) {
       await select.selectOption({ label: value }).catch(() => select.selectOption(value));
-    } else {
+    } else if (await input.count() > 0) {
       await input.fill(value);
     }
   }
@@ -146,11 +146,12 @@ export class CapetownAuthPage extends BasePage {
   }
 
   /**
-   * DOB is controlled by the pickadate plugin; the raw input is `readonly`.
-   * We set both the visible input's value and the plugin's hidden submit
-   * input so jQuery Validate sees a filled field.
+   * DOB is config-gated on capetown (`legacyweb_config_show_dob`). When
+   * hidden, silently skip. When rendered, it's the pickadate plugin with a
+   * readonly input — set value + fire change so jQuery Validate sees it.
    */
   async setDob(iso: string): Promise<void> {
+    if (await this.dobInput.count() === 0) return;
     await this.dobInput.evaluate((el, v) => {
       const input = el as HTMLInputElement;
       input.removeAttribute('readonly');

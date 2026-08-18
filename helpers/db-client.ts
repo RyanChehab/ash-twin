@@ -44,12 +44,14 @@ export class DbClient {
   // ── configuration overrides ─────────────────────────────────────────────
 
   /**
-   * Overwrite one row in `configuration`. Returns a function that restores
-   * the previous value. Values are stored PHP-serialized ('s:1:"1";') —
-   * the caller passes a native TS value and we handle the wire format.
+   * Overwrite one row in `configuration`. Returns the raw PHP-serialized
+   * previous value (or null when the row didn't exist) so callers can
+   * restore it later — potentially from a different DbClient instance (e.g.
+   * afterAll running after this scope's pool has closed). Values are stored
+   * PHP-serialized ('s:1:"1";'); we serialize the input for the caller.
    */
-  async overrideConfig(field: string, value: string | number | boolean): Promise<() => Promise<void>> {
-    const previous = await this.one<{ config_value: string }>(
+  async overrideConfig(field: string, value: string | number | boolean): Promise<string | null> {
+    const row = await this.one<{ config_value: string }>(
       'SELECT config_value FROM configuration WHERE config_field = ?',
       [field],
     );
@@ -57,13 +59,19 @@ export class DbClient {
       'UPDATE configuration SET config_value = ? WHERE config_field = ?',
       [phpSerialize(value), field],
     );
-    return async () => {
-      if (!previous) return;
-      await this.execute(
-        'UPDATE configuration SET config_value = ? WHERE config_field = ?',
-        [previous.config_value, field],
-      );
-    };
+    return row?.config_value ?? null;
+  }
+
+  /**
+   * Write a raw PHP-serialized value back to `configuration` — the companion
+   * to `overrideConfig` when restoring across fixture scopes.
+   */
+  async restoreConfig(field: string, previous: string | null): Promise<void> {
+    if (previous === null) return;
+    await this.execute(
+      'UPDATE configuration SET config_value = ? WHERE config_field = ?',
+      [previous, field],
+    );
   }
 
   // ── user + auth: for the signup vitality test ───────────────────────────
