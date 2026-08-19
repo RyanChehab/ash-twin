@@ -68,12 +68,20 @@ export class DefaultCheckoutPage extends BasePage {
    * Click the handling with the given payment type and return the wrapping
    * <label> Locator. Payment strategies use it to scope their own selectors
    * (iframe, widget) without colliding with sibling handling widgets.
+   *
+   * Some handlings (e.g. Tabby) render the row with `display:none` until an
+   * eligibility AJAX resolves. Tests can't rely on that pass — the caller
+   * asked for the handling by name, so force the label visible before clicking.
    */
   async pickHandlingByPayment(paymentKey: string): Promise<Locator> {
+    await this.page.evaluate((key) => {
+      const input = document.querySelector(`input[name="handling_id"][data-payment-type="${key}"]`);
+      const lbl = input?.closest('label') as HTMLElement | null;
+      if (lbl) lbl.style.display = '';
+    }, paymentKey);
     const label = this.page.locator(
       `label.radio-option:has(input[name="handling_id"][data-payment-type="${paymentKey}"])`,
     );
-    // Radios may be visually hidden; clicking the label toggles the input.
     await label.click();
     return label;
   }
