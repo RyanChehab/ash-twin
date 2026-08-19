@@ -196,6 +196,18 @@ export class CapetownAuthPage extends BasePage {
     await this.waitReady();
   }
 
+  async login(creds: LoginCreds): Promise<void> {
+    await this.fillLogin(creds);
+    await this.submitLogin();
+  }
+
+  /** True when either the login or register form is visible on the current page. */
+  async isOnPage(): Promise<boolean> {
+    if (await this.loginForm.isVisible())    return true;
+    if (await this.registerForm.isVisible()) return true;
+    return false;
+  }
+
   async hasLoginFieldError(field: string): Promise<boolean> {
     return this.page
       .locator(`#signin-form2 [name="${field}"].error`)
