@@ -14,7 +14,7 @@ export default defineConfig({
     ...(process.env.CI ? [['junit', { outputFile: 'test-results/junit.xml' }] as const] : []),
   ],
   use: {
-    ignoreHTTPSErrors: true,
+    ignoreHTTPSErrors: false,
     trace: 'on-first-retry',
     screenshot: 'on',
     video: 'retain-on-failure',
