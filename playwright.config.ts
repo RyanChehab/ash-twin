@@ -16,10 +16,11 @@ export default defineConfig({
   use: {
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    screenshot: 'on',
     video: 'retain-on-failure',
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
+    channel: 'chrome'
   },
   // Every tenant/env combo we want to test is a Playwright project. Running
   // `npx playwright test` runs them all in one shot with a combined report;
