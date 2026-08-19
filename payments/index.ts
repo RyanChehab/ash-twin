@@ -1,5 +1,6 @@
 import type { PaymentStrategy } from '../types/payment';
 import { cybersource_unified } from './cybersource_unified';
+import { tabby } from './tabby';
 
 /**
  * Strategy registry — keyed by `handling_payment`. Add new gateways by
@@ -7,6 +8,7 @@ import { cybersource_unified } from './cybersource_unified';
  */
 const strategies: PaymentStrategy[] = [
   cybersource_unified,
+  tabby,
 ];
 
 const registry: Record<string, PaymentStrategy> = Object.fromEntries(
