@@ -17,5 +17,6 @@
   { "id": 16, "title": "an authenticated user completes a GA purchase paying by a 3DS card via cybersource unified checkout" },
   { "id": 17, "title": "an authenticated user cancels the 3DS challenge and the payment fails" },
   { "id": 18, "title": "an anonymous user is redirected to register when proceeding to checkout" },
-  { "id": 19, "title": "empty date of birth blocks submission when show_dob is enabled" }
+  { "id": 19, "title": "empty date of birth blocks submission when show_dob is enabled" },
+  { "id": 21, "title": "an authenticated user completes a GA purchase paying by tabby" }
 ]

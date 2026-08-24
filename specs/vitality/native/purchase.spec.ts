@@ -2,6 +2,7 @@ import { test, expect } from '../../../helpers/test';
 import { events } from '../../../helpers/event-presets';
 import { requireTestCustomer } from '../../../helpers/tenant';
 import { cards } from '../../../payments/cybersource_unified';
+import { identities as tabbyIdentities } from '../../../payments/tabby';
 
 
 test.beforeAll(async ({ admin, db }) => {
@@ -13,8 +14,8 @@ test.beforeAll(async ({ admin, db }) => {
 test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox
 
-  const creds = requireTestCustomer(tenant);
-  const event = await resolver.event(events.normal);
+  const creds    = requireTestCustomer(tenant);
+  const event    = await resolver.event(events.normal);
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -22,23 +23,13 @@ test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
     soldout:      false,
   });
 
-  await customer.openAuth();
-  await customer.login(creds);
+  await customer.pages.auth.open();
+  await customer.pages.auth.login(creds);
 
-  await customer.openEvent(event);
-  await customer.pickCategory(category);
-  await customer.setQuantity(category, 1);
-  await customer.acceptTerms();
-  await customer.addToCart(category);
-  await customer.proceedToCheckout();
+  const ticket = await customer.buyTicket(event, category, 1, {
+    payment: { key: 'cybersource_unified', card: cards.visaSuccess },
+  });
 
-  expect(await customer.isOnCheckoutProducts()).toBe(true);
-  await customer.proceedFromProducts();
-  expect(await customer.isOnCheckoutProducts()).toBe(false);
-
-  await customer.payWith('cybersource_unified', cards.visaSuccess);
-
-  const ticket = await customer.readTicket();
   expect(ticket.orderRef).toBeTruthy();
   expect(ticket.status).toBe('paid');
 
@@ -48,8 +39,8 @@ test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
 test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // paid checkout + 3DS challenge
 
-  const creds = requireTestCustomer(tenant);
-  const event = await resolver.event(events.normal);
+  const creds    = requireTestCustomer(tenant);
+  const event    = await resolver.event(events.normal);
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -57,23 +48,13 @@ test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
     soldout:      false,
   });
 
-  await customer.openAuth();
-  await customer.login(creds);
+  await customer.pages.auth.open();
+  await customer.pages.auth.login(creds);
 
-  await customer.openEvent(event);
-  await customer.pickCategory(category);
-  await customer.setQuantity(category, 1);
-  await customer.acceptTerms();
-  await customer.addToCart(category);
-  await customer.proceedToCheckout();
+  const ticket = await customer.buyTicket(event, category, 1, {
+    payment: { key: 'cybersource_unified', card: cards.visa3ds },
+  });
 
-  expect(await customer.isOnCheckoutProducts()).toBe(true);
-  await customer.proceedFromProducts();
-  expect(await customer.isOnCheckoutProducts()).toBe(false);
-
-  await customer.payWith('cybersource_unified', cards.visa3ds);
-
-  const ticket = await customer.readTicket();
   expect(ticket.orderRef).toBeTruthy();
   expect(ticket.status).toBe('paid');
 
@@ -83,8 +64,8 @@ test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
 test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);
 
-  const creds = requireTestCustomer(tenant);
-  const event = await resolver.event(events.normal);
+  const creds    = requireTestCustomer(tenant);
+  const event    = await resolver.event(events.normal);
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -92,30 +73,27 @@ test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
     soldout:      false,
   });
 
-  await customer.openAuth();
-  await customer.login(creds);
+  await customer.pages.auth.open();
+  await customer.pages.auth.login(creds);
 
-  await customer.openEvent(event);
-  await customer.pickCategory(category);
-  await customer.setQuantity(category, 1);
-  await customer.acceptTerms();
-  await customer.addToCart(category);
-  await customer.proceedToCheckout();
+  const ticket = await customer.buyTicket(event, category, 1, {
+    payment: {
+      key:          'cybersource_unified',
+      card:         cards.visa3ds,
+      strategyOpts: { cancelChallenge: true },
+    },
+  });
 
-  await customer.proceedFromProducts();
-
-  await customer.payWith('cybersource_unified', cards.visa3ds, { cancelChallenge: true });
-
-  const ticket = await customer.readTicket();
   expect(ticket.status).toBe('failed');
 
   feedback(`event ${event.id} category ${category.id}: 3DS cancelled → status ${ticket.status}`);
 });
 
-test(18, 'vitality', async ({ customer, resolver, feedback }) => {
-  test.setTimeout(60_000);
+test(21, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+  test.setTimeout(180_000);
 
-  const event = await resolver.event(events.normal);
+  const creds    = requireTestCustomer(tenant);
+  const event    = await resolver.event(events.normal);
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -123,18 +101,48 @@ test(18, 'vitality', async ({ customer, resolver, feedback }) => {
     soldout:      false,
   });
 
-  await customer.openEvent(event);
-  await customer.pickCategory(category);
-  await customer.setQuantity(category, 1);
-  await customer.acceptTerms();
-  await customer.addToCart(category);
-  await customer.proceedToCheckout();
+  await customer.pages.auth.open();
+  await customer.pages.auth.login(creds);
 
-  if (await customer.isOnCheckoutProducts()) {
-    await customer.proceedFromProducts();
+  const ticket = await customer.buyTicket(event, category, 1, {
+    payment: {
+      key:          'tabby',
+      strategyOpts: { identity: tabbyIdentities.success },
+    },
+  });
+
+  expect(ticket.orderRef).toBeTruthy();
+  expect(ticket.status).toBe('paid');
+
+  feedback(`event ${event.id} category ${category.id}: tabby paid order ${ticket.orderRef}`);
+});
+
+test(18, 'vitality', async ({ customer, resolver, feedback }) => {
+  test.setTimeout(60_000);
+
+  const event    = await resolver.event(events.normal);
+  const category = await resolver.category({
+    eventId:      event.id,
+    numbering:    'none',
+    webPublished: true,
+    soldout:      false,
+  });
+
+  // Anonymous → checkout should bounce to auth. Drive the individual pages
+  // so we can observe the redirect precisely (buyTicket would auto-follow
+  // through and fail on the wrong page).
+  await customer.openEvent(event);
+  await customer.pages.event.pickCategory(category.id);
+  await customer.pages.event.setQuantity(category.id, 1);
+  await customer.pages.event.acceptTerms();
+  await customer.pages.event.addToCart(category.id);
+  await customer.pages.event.proceedToCheckout();
+
+  if (await customer.pages.checkoutProducts.isCurrent()) {
+    await customer.pages.checkoutProducts.continue();
   }
 
-  expect(await customer.isOnAuthPage()).toBe(true);
+  expect(await customer.pages.auth.isOnPage()).toBe(true);
 
-  feedback(`anonymous user landed on auth (${customer.currentUrl()})`);
+  feedback(`anonymous user landed on auth (${customer.page.url()})`);
 });

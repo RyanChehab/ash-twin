@@ -4,16 +4,9 @@ import type { RegisterData } from '../../../types/user';
 /**
  * Native auth vitality specs — every squaremaze-frontend tenant runs these
  * (default theme AND capetown theme). The tests here only exercise fields
- * guaranteed to be rendered on both themes; theme-specific field checks
- * (e.g. DOB required only when `show_dob=1`) live in `default/auth.spec.ts`
- * or `capetown/auth.spec.ts`.
- *
- *   1,2,3,5,6,7,8,9   register form — client-side validation
- *   10                signup end-to-end — register + activate + verify + cleanup
- *   11,12,13,14       login form
- */
+ * guaranteed to be rendered on both themes
+**/
 
-/** A base RegisterData that would pass every client-side rule. */
 const validBase = (email?: string): RegisterData => ({
   firstName: 'Ash',
   lastName:  'Twin',
@@ -29,88 +22,97 @@ const validBase = (email?: string): RegisterData => ({
 // ── Register form: per-field client-side validation ────────────────────────
 
 test(1, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), firstName: '' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_firstname')).toBe(true);
-  expect(await customer.landedOnActivation()).toBe(false);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), firstName: '' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_firstname')).toBe(true);
+  expect(await auth.isOnActivationPage()).toBe(false);
 });
 
 test(2, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), lastName: '' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_lastname')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), lastName: '' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_lastname')).toBe(true);
 });
 
 test(3, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), email: 'not-an-email' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_email')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), email: 'not-an-email' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_email')).toBe(true);
 });
 
 test(5, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), phone: '' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_phone')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), phone: '' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_phone')).toBe(true);
 });
 
 test(6, "vitality", async ({ customer }) => {
   // Rule: >=8 chars, at least 1 digit, 1 lowercase, 1 uppercase (`strongPassword`).
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), password: 'weakpass' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('password1')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), password: 'weakpass' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('password1')).toBe(true);
 });
 
 test(7, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({
     ...validBase(),
     password:        'StrongPass1',
     passwordConfirm: 'DifferentPass1',
   });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('password2')).toBe(true);
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('password2')).toBe(true);
 });
 
 test(8, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), acceptTerms: false });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('check_condition')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), acceptTerms: false });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('check_condition')).toBe(true);
 });
 
 test(9, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_firstname')).toBe(true);
-  expect(await customer.hasRegisterFieldError('user_lastname')).toBe(true);
-  expect(await customer.hasRegisterFieldError('user_email')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_firstname')).toBe(true);
+  expect(await auth.hasFieldError('user_lastname')).toBe(true);
+  expect(await auth.hasFieldError('user_email')).toBe(true);
 });
 
 // ── Signup end-to-end ──────────────────────────────────────────────────────
 
 test(10, "vitality", async ({ customer, db, feedback }) => {
   const email = `ash.twin.${Date.now()}@example.com`;
+  const auth  = customer.pages.auth;
 
   try {
-    await customer.openAuth();
-    await customer.fillRegister(validBase(email));
-    await customer.enableTestCaptchaBypass();
-    await customer.submitRegisterProgrammatically();
+    await auth.open();
+    await auth.fillRegister(validBase(email));
+    await auth.enableTestCaptchaBypass();
+    await auth.submitRegisterProgrammatically();
 
     // Server persisted the user + auth row — activation hash now available.
     const activationPath = await db.activationUrlFor(email);
     expect(activationPath).toContain('/activation.php?uar=');
 
     // Follow the activation URL — server clears auth.active and signs the user in.
-    await customer.activate(activationPath);
+    await auth.activate(activationPath);
 
     expect(await db.isUserActive(email)).toBe(true);
-    expect(await customer.isSignedIn()).toBe(true);
+    expect(await auth.isSignedIn()).toBe(true);
 
     feedback(`user ${email} signed up`);
   } finally {
@@ -125,38 +127,42 @@ test(10, "vitality", async ({ customer, db, feedback }) => {
 
 test(11, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
-  await customer.openAuth();
-  await customer.fillLogin({ username: '', password: creds.password });
-  await customer.submitLogin();
-  expect(await customer.hasLoginFieldError('username')).toBe(true);
-  expect(await customer.isSignedIn()).toBe(false);
+  const auth  = customer.pages.auth;
+  await auth.open();
+  await auth.fillLogin({ username: '', password: creds.password });
+  await auth.submitLogin();
+  expect(await auth.hasLoginFieldError('username')).toBe(true);
+  expect(await auth.isSignedIn()).toBe(false);
 });
 
 test(12, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
-  await customer.openAuth();
-  await customer.fillLogin({ username: creds.username, password: '' });
-  await customer.submitLogin();
-  expect(await customer.hasLoginFieldError('password')).toBe(true);
-  expect(await customer.isSignedIn()).toBe(false);
+  const auth  = customer.pages.auth;
+  await auth.open();
+  await auth.fillLogin({ username: creds.username, password: '' });
+  await auth.submitLogin();
+  expect(await auth.hasLoginFieldError('password')).toBe(true);
+  expect(await auth.isSignedIn()).toBe(false);
 });
 
 test(13, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillLogin({
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillLogin({
     username: 'not.a.real.user@ashtwin.com',
     password: 'DefinitelyWrong1',
   });
-  await customer.submitLogin();
+  await auth.submitLogin();
   // Client-side validation passes (email format + non-empty), form POSTs.
   // Server rejects → we stay on the auth page, unsigned.
-  expect(await customer.isSignedIn()).toBe(false);
+  expect(await auth.isSignedIn()).toBe(false);
 });
 
 test(14, "vitality", async ({ customer, tenant, feedback }) => {
   const creds = tenant.users.testCustomer!;
-  await customer.openAuth();
-  await customer.login(creds);
-  expect(await customer.isSignedIn()).toBe(true);
+  const auth  = customer.pages.auth;
+  await auth.open();
+  await auth.login(creds);
+  expect(await auth.isSignedIn()).toBe(true);
   feedback(`user ${creds.username} logged in`);
 });
