@@ -43,13 +43,6 @@ export class DbClient {
 
   // ── configuration overrides ─────────────────────────────────────────────
 
-  /**
-   * Overwrite one row in `configuration`. Returns the raw PHP-serialized
-   * previous value (or null when the row didn't exist) so callers can
-   * restore it later — potentially from a different DbClient instance (e.g.
-   * afterAll running after this scope's pool has closed). Values are stored
-   * PHP-serialized ('s:1:"1";'); we serialize the input for the caller.
-   */
   async overrideConfig(field: string, value: string | number | boolean): Promise<string | null> {
     const row = await this.one<{ config_value: string }>(
       'SELECT config_value FROM configuration WHERE config_field = ?',
@@ -76,13 +69,8 @@ export class DbClient {
 
   // ── user + auth: for the signup vitality test ───────────────────────────
 
-  /**
-   * Build the activation URL for a just-registered user. Mirrors the token
-   * format used by the platform's email helper:
-   *   base64(`${user_id}|<datetime>|${auth.active}`) — the middle segment
-   *   isn't validated server-side, so we use a placeholder.
-   * Returns the path (`/activation.php?uar=...`), not a full URL.
-   */
+
+  //Build the activation URL for a just-registered user.
   async activationUrlFor(email: string): Promise<string> {
     // Read-after-write can race on staging (commit lag + potential replica
     // fan-out), so retry up to ~1.5s before giving up. Happy path is one query.

@@ -18,7 +18,6 @@ const registryPath = path.resolve(thisDir, '..', 'specs', 'registry.json');
 const registry: RegistryEntry[] = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
 
 // Load-time integrity check — fail the whole test process on a duplicate id
-// rather than silently letting two tests share the same identity.
 const byId = new Map<number, RegistryEntry>();
 for (const entry of registry) {
   if (byId.has(entry.id)) {
@@ -41,8 +40,5 @@ function callable(id: number, category: string, fn: TestFn): void {
   base(`ID: ${entry.id} ${entry.title}`, { tag: [`@${category}`] }, fn);
 }
 
-// Attach Playwright's `describe`, `beforeAll`, `step`, etc. so callers can
-// use `test.describe(...)` naturally. `Object.assign` copies enumerable
-// properties from `base` onto our callable function.
 export const test = Object.assign(callable, base);
 export { expect } from '../fixtures';

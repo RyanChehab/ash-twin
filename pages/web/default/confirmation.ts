@@ -1,5 +1,6 @@
 import type { Locator } from '@playwright/test';
 import { BasePage } from '../base';
+import type { Ticket } from '../../../types/ticket';
 
 export type ConfirmationStatus = 'paid' | 'pending' | 'failed' | 'unknown';
 
@@ -24,5 +25,12 @@ export class DefaultConfirmationPage extends BasePage {
 
   async isSuccess(): Promise<boolean> {
     return (await this.successHeading.count()) > 0;
+  }
+
+  async readTicket(): Promise<Ticket> {
+    return {
+      orderRef: (await this.orderRef()) ?? '',
+      status:   await this.status(),
+    };
   }
 }
