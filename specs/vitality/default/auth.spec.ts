@@ -23,8 +23,9 @@ const validBase = (email?: string): RegisterData => ({
 });
 
 test(4, "vitality", async ({ customer }) => {
-  await customer.openAuth();
-  await customer.fillRegister({ ...validBase(), dob: '' });
-  await customer.submitRegister();
-  expect(await customer.hasRegisterFieldError('user_dob')).toBe(true);
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), dob: '' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_dob')).toBe(true);
 });
