@@ -17,7 +17,7 @@ export class DbClient {
       password: cfg.password,
       database: cfg.database,
       waitForConnections: true,
-      connectionLimit: 5,
+      connectionLimit: 10,
       queueLimit: 0,
     });
   }
