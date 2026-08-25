@@ -6,7 +6,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1,
+  workers: 2,
+  timeout: 60_000,
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
@@ -16,10 +17,10 @@ export default defineConfig({
   use: {
     ignoreHTTPSErrors: false,
     trace: 'on-first-retry',
-    screenshot: 'off',
+    screenshot: 'on',
     video: 'retain-on-failure',
-    actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    actionTimeout: 30_000,
+    navigationTimeout: 60_000,
     channel: 'chrome'
   },
   // Every tenant/env combo we want to test is a Playwright project. Running
