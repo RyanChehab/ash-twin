@@ -62,23 +62,45 @@ export const cybersource_unified: PaymentStrategy = {
 
     const [firstName, lastName] = (testCard.name ?? 'Test Customer').split(' ', 2);
     await cardEntryFrame.getByRole('textbox', { name: /first name/i }).fill(firstName);
-    await cardEntryFrame.getByRole('textbox', { name: /last name/i }).fill(lastName ?? 'Customer');
+    const lastNameField = cardEntryFrame.getByRole('textbox', { name: /last name/i });
+    await lastNameField.fill(lastName ?? 'Customer');
+    // SDK enables Continue on blur — .fill() doesn't emit it. Tab out.
+    await lastNameField.press('Tab');
 
-    // 4. Advance: SDK's button is labelled "Continue" on the entry screen.
-    const payFrame = await waitForFrameWith(page, 10_000, (frame) =>
-      hasVisible(frame, 'button', /continue|^pay$|submit|confirm/i),
+    // 4. Advance the SDK, twice:
+    //    (a) Continue on the card-entry screen → SDK collapses to a summary
+    //        view (masked card + "Save my info" checkbox + another Continue).
+    //    (b) Continue on the summary → SDK returns transientToken from
+    //        mount(), then the plugin's JS runs checkout.complete() (which
+    //        does frictionless 3DS + auth) and auto-submits payment-form.
+    //    Both Continues live inside Cybersource iframes — the plugin renders
+    //    no parent-page CTA. We identify the summary screen by its distinct
+    //    "Save my information" text, then click Continue again.
+    const cardContinue = await waitForEnabledButtonInFrames(
+      page,
+      30_000,
+      /continue|^pay(\s|$)|submit|confirm/i,
     );
-    await payFrame.getByRole('button', { name: /continue|^pay$|submit|confirm/i }).first().click();
+    await cardContinue.click();
 
-    // 5. SDK tokenises + optionally shows a 3DS challenge (Cybersource routes
-    //    it through Cardinal / Centinel — visible as `centinelapistag` or
-    //    `cardinaltrusted` in the challenge iframe's URL). Once 3DS clears
-    //    (or if none is triggered) the SDK populates #flex_token and calls
-    //    paymentForm.submit(), which renders checkout_result.tpl.
-    //
-    //    Poll: confirmation heading wins → done. Otherwise, if a 3DS
-    //    challenge frame appears, drop the sandbox OTP (`1234`) and submit,
-    //    then keep polling until the heading shows.
+    const summaryFrame = await waitForFrameWith(page, 30_000, (frame) =>
+      hasVisibleText(frame, /save my (info|information)/i),
+    );
+    const summaryContinue = summaryFrame.getByRole('button', {
+      name: /continue|^pay(\s|$)|submit|confirm/i,
+    }).first();
+    await summaryContinue.waitFor({ state: 'visible', timeout: 10_000 });
+    // Wait for it to enable — SDK may need a beat before it's clickable.
+    for (let i = 0; i < 20 && !(await summaryContinue.isEnabled()); i++) {
+      await page.waitForTimeout(200);
+    }
+    await summaryContinue.click();
+
+    // 5. Optionally a 3DS challenge appears (Cybersource routes it through
+    //    Cardinal / Centinel — visible as `centinelapistag` or `cardinaltrusted`
+    //    in the challenge iframe's URL). Poll: confirmation heading wins →
+    //    done. Otherwise, if a 3DS challenge frame appears, drop the sandbox
+    //    OTP (`1234`) and submit, then keep polling until the heading shows.
     const successHeading = page.locator('h1.success, h1.pending, h1.fail');
     const deadline = Date.now() + 60_000;
     while (Date.now() < deadline) {
@@ -172,6 +194,43 @@ async function hasVisible(frame: Frame, role: 'button' | 'textbox', name: RegExp
   const loc = frame.getByRole(role, { name });
   if ((await loc.count()) === 0) return false;
   return await loc.first().isVisible();
+}
+
+async function hasVisibleText(frame: Frame, text: RegExp): Promise<boolean> {
+  const loc = frame.getByText(text);
+  if ((await loc.count()) === 0) return false;
+  return await loc.first().isVisible();
+}
+
+/**
+ * Poll every frame for a visible + enabled button matching `name`. Scoped to
+ * frames only (excludes the parent page) so we don't accidentally match the
+ * SquareMaze confirm page's own submit button instead of the SDK's Continue.
+ */
+async function waitForEnabledButtonInFrames(
+  page: Page,
+  timeoutMs: number,
+  name: RegExp,
+) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    for (const frame of page.frames()) {
+      if (frame === page.mainFrame()) continue;
+      try {
+        const btn = frame.getByRole('button', { name }).first();
+        if ((await btn.count()) === 0) continue;
+        if (!(await btn.isVisible())) continue;
+        if (!(await btn.isEnabled())) continue;
+        return btn;
+      } catch {
+        /* frame detached mid-check — retry */
+      }
+    }
+    await page.waitForTimeout(400);
+  }
+  throw new Error(
+    `cybersource_unified: no enabled iframe button matching ${name} within ${timeoutMs}ms`,
+  );
 }
 
 /**
