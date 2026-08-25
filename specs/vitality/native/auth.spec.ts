@@ -89,9 +89,18 @@ test(9, "vitality", async ({ customer }) => {
   expect(await auth.hasFieldError('user_email')).toBe(true);
 });
 
+test(10, "vitality", async ({ customer }) => {
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillRegister({ ...validBase(), country: '' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_country')).toBe(true);
+  expect(await auth.isOnActivationPage()).toBe(false);
+});
+
 // ── Signup end-to-end ──────────────────────────────────────────────────────
 
-test(10, "vitality", async ({ customer, db, feedback }) => {
+test(11, "vitality", async ({ customer, db, feedback }) => {
   const email = `ash.twin.${Date.now()}@example.com`;
   const auth  = customer.pages.auth;
 
@@ -122,7 +131,7 @@ test(10, "vitality", async ({ customer, db, feedback }) => {
 // Login tests rely on `tenant.users.testCustomer` already existing (and being
 // activated) in the tenant's DB. Set the creds in `sites/{name}.{env}.json`.
 
-test(11, "vitality", async ({ customer, tenant }) => {
+test(12, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
   const auth  = customer.pages.auth;
   await auth.open();
@@ -132,7 +141,7 @@ test(11, "vitality", async ({ customer, tenant }) => {
   expect(await auth.isSignedIn()).toBe(false);
 });
 
-test(12, "vitality", async ({ customer, tenant }) => {
+test(13, "vitality", async ({ customer, tenant }) => {
   const creds = tenant.users.testCustomer!;
   const auth  = customer.pages.auth;
   await auth.open();
@@ -142,7 +151,7 @@ test(12, "vitality", async ({ customer, tenant }) => {
   expect(await auth.isSignedIn()).toBe(false);
 });
 
-test(13, "vitality", async ({ customer }) => {
+test(14, "vitality", async ({ customer }) => {
   const auth = customer.pages.auth;
   await auth.open();
   await auth.fillLogin({
@@ -155,7 +164,7 @@ test(13, "vitality", async ({ customer }) => {
   expect(await auth.isSignedIn()).toBe(false);
 });
 
-test(14, "vitality", async ({ customer, tenant, feedback }) => {
+test(15, "vitality", async ({ customer, tenant, feedback }) => {
   const creds = tenant.users.testCustomer!;
   const auth  = customer.pages.auth;
   await auth.open();

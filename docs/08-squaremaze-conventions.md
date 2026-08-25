@@ -119,7 +119,7 @@ function validateCaptcha($nospam, $fieldName = null, $bypassNoSpam = false) {
 
 `isTestVersion()` = `strpos(INSTALL_VERSION, 'staging') !== false || strpos(INSTALL_VERSION, 'dev') !== false`. The source file has `INSTALL_VERSION = "latest-dev"`, but deploy pipelines can override with a version tag that contains neither string — at which point the bypass is silently ignored server-side even though the request carries it.
 
-**When test 10 (signup) fails on staging with "No user found" and the trace shows `skipCaptcha=1` was sent** — the diagnosis is almost always `INSTALL_VERSION` on the staging deploy missing the `staging`/`dev` marker. Fix on the SquareMaze deploy side (append `-staging` to the version), not on ash-twin's side.
+**When test 11 (signup) fails on staging with "No user found" and the trace shows `skipCaptcha=1` was sent** — the diagnosis is almost always `INSTALL_VERSION` on the staging deploy missing the `staging`/`dev` marker. Fix on the SquareMaze deploy side (append `-staging` to the version), not on ash-twin's side.
 
 ## `handling_payment` ↔ `eph_*.php` filename convention
 

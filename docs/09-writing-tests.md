@@ -66,9 +66,9 @@ Filter examples:
 # Run every vitality test
 npx playwright test --grep @vitality
 
-# Run only test 10 — three equivalent options
-npx playwright test --grep "^ID: 10 "               # by title (mind the trailing space so 10 doesn't match 100)
-npx playwright test specs/vitality/auth.spec.ts:98  # by file path + line number
+# Run only test 11 — three equivalent options
+npx playwright test --grep "^ID: 11 "               # by title (mind the trailing space so 11 doesn't match 110)
+npx playwright test specs/vitality/auth.spec.ts:103 # by file path + line number
 npx playwright test --ui                            # UI mode, click any test to run it
 ```
 
@@ -95,10 +95,10 @@ When we build the coverage dashboard, richer metadata will land in a real schema
 
 ## Verify both sides — DB and DOM
 
-Tests that just check the frontend can pass while the DB says something totally different. The signup test (id 10) is the gold standard for the mixed-verification pattern:
+Tests that just check the frontend can pass while the DB says something totally different. The signup test (id 11) is the gold standard for the mixed-verification pattern:
 
 ```ts
-test(10, 'vitality', async ({ customer, db }) => {
+test(11, 'vitality', async ({ customer, db }) => {
   const email = `ash.twin.${Date.now()}@example.com`;
   try {
     await customer.openAuth();

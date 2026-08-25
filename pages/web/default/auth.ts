@@ -65,12 +65,28 @@ export class DefaultAuthPage extends BasePage {
     if (data.email     !== undefined) await this.emailInput.fill(data.email);
     if (data.dob       !== undefined) await this.setDob(data.dob);
     if (data.phone     !== undefined) await this.setPhone(data.phone);
-    if (data.country)                 await this.countrySelect.selectOption(data.country);
+    if (data.country !== undefined)   await this.setCountry(data.country);
     if (data.city)                    await this.selectCity(data.city);
     if (data.password  !== undefined) await this.password1Input.fill(data.password);
     const confirm = data.passwordConfirm ?? data.password;
     if (confirm !== undefined) await this.password2Input.fill(confirm);
     await this.setTerms(data.acceptTerms !== false);
+  }
+
+  /**
+   * Set the country select. Empty string clears the selection (selectedIndex
+   * = -1) so jQuery Validate's `required` rule fires on submit — needed for
+   * the empty-country test.
+   */
+  async setCountry(value: string): Promise<void> {
+    if (value === '') {
+      await this.countrySelect.evaluate((el) => {
+        (el as HTMLSelectElement).selectedIndex = -1;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      return;
+    }
+    await this.countrySelect.selectOption(value);
   }
 
   /**

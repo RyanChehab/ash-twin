@@ -20,16 +20,12 @@ let prevShowDob: string | null = null;
 
 test.beforeAll(async ({ admin, db }) => {
   await db.overrideConfig('disable_config_cache', '1');
-  prevShowDob = await db.overrideConfig('legacyweb_config_show_dob', '1');
   await admin.clearCache();
 });
 
-test.afterAll(async ({ admin, db }) => {
-  await db.restoreConfig('legacyweb_config_show_dob', prevShowDob);
-  await admin.clearCache();
-});
 
-test(19, "vitality", async ({ customer }) => {
+test(20, "vitality", async ({ customer, db }) => {
+  await db.overrideConfig('legacyweb_config_show_dob', '1');
   const auth = customer.pages.auth;
   await auth.open();
   await auth.fillRegister({ ...validBase(), dob: '' });

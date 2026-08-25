@@ -65,12 +65,23 @@ export class CapetownAuthPage extends BasePage {
     if (data.email     !== undefined) await this.emailInput.fill(data.email);
     if (data.dob       !== undefined) await this.setDob(data.dob);
     if (data.phone     !== undefined) await this.setPhone(data.phone);
-    if (data.country)                 await this.countrySelect.selectOption(data.country);
+    if (data.country !== undefined)   await this.setCountry(data.country);
     if (data.city)                    await this.selectCity(data.city);
     if (data.password  !== undefined) await this.password1Input.fill(data.password);
     const confirm = data.passwordConfirm ?? data.password;
     if (confirm !== undefined) await this.password2Input.fill(confirm);
     await this.setTerms(data.acceptTerms !== false);
+  }
+
+  async setCountry(value: string): Promise<void> {
+    if (value === '') {
+      await this.countrySelect.evaluate((el) => {
+        (el as HTMLSelectElement).selectedIndex = -1;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      return;
+    }
+    await this.countrySelect.selectOption(value);
   }
 
   /**
@@ -162,11 +173,6 @@ export class CapetownAuthPage extends BasePage {
 
   // ── Register form: assertions ───────────────────────────────────────────
 
-  /**
-   * True when jQuery Validate has flagged the input `[name={field}]` as
-   * invalid — it adds `.error` to the input itself. Robust across the varied
-   * label placements in the template.
-   */
   async hasFieldError(field: string): Promise<boolean> {
     return this.page
       .locator(`#user-register [name="${field}"].error`)
@@ -216,11 +222,6 @@ export class CapetownAuthPage extends BasePage {
   }
 
   async activate(activationPath: string): Promise<void> {
-    // On successful activation the server responds with an immediate 302 to
-    // `?profileVerified=success`, so `page.goto(activationPath)` never
-    // commits to the activation URL — Playwright reports it as "interrupted
-    // by another navigation". That interruption IS the success signal.
-    // Swallow it and wait for the final page.
     try {
       await this.page.goto(activationPath);
     } catch (err) {

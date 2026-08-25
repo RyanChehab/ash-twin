@@ -11,7 +11,7 @@ test.beforeAll(async ({ admin, db }) => {
 });
 
 
-test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox
 
   const creds    = requireTestCustomer(tenant);
@@ -36,7 +36,7 @@ test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   feedback(`event ${event.id} category ${category.id}: paid order ${ticket.orderRef}`);
 });
 
-test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // paid checkout + 3DS challenge
 
   const creds    = requireTestCustomer(tenant);
@@ -61,7 +61,7 @@ test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   feedback(`event ${event.id} category ${category.id}: 3DS paid order ${ticket.orderRef}`);
 });
 
-test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(18, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);
 
   const creds    = requireTestCustomer(tenant);
@@ -117,7 +117,7 @@ test(21, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   feedback(`event ${event.id} category ${category.id}: tabby paid order ${ticket.orderRef}`);
 });
 
-test(18, 'vitality', async ({ customer, resolver, feedback }) => {
+test(19, 'vitality', async ({ customer, resolver, feedback }) => {
   test.setTimeout(60_000);
 
   const event    = await resolver.event(events.normal);

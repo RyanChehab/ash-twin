@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 5,
+  workers: 1,
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
@@ -16,7 +16,7 @@ export default defineConfig({
   use: {
     ignoreHTTPSErrors: false,
     trace: 'on-first-retry',
-    screenshot: 'on',
+    screenshot: 'off',
     video: 'retain-on-failure',
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
