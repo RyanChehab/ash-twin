@@ -173,11 +173,11 @@ export class CapetownAuthPage extends BasePage {
 
   // ── Register form: assertions ───────────────────────────────────────────
 
-  async hasFieldError(field: string): Promise<boolean> {
-    return this.page
-      .locator(`#user-register [name="${field}"].error`)
-      .first()
-      .isVisible();
+  async hasFieldError(field: string, timeout?: number): Promise<boolean> {
+    return this.isVisibleSoon(
+      this.page.locator(`#user-register [name="${field}"].error`).first(),
+      timeout,
+    );
   }
 
   /** Count of visible field-level error labels — useful for "form is dirty" checks. */
@@ -186,8 +186,8 @@ export class CapetownAuthPage extends BasePage {
   }
 
   /** True when the server accepted registration and rendered the activation prompt. */
-  async isOnActivationPage(): Promise<boolean> {
-    return this.activationForm.isVisible();
+  async isOnActivationPage(timeout?: number): Promise<boolean> {
+    return this.isVisibleSoon(this.activationForm, timeout);
   }
 
   // ── Login form: fillers + submit ────────────────────────────────────────
@@ -214,11 +214,11 @@ export class CapetownAuthPage extends BasePage {
     return false;
   }
 
-  async hasLoginFieldError(field: string): Promise<boolean> {
-    return this.page
-      .locator(`#signin-form2 [name="${field}"].error`)
-      .first()
-      .isVisible();
+  async hasLoginFieldError(field: string, timeout?: number): Promise<boolean> {
+    return this.isVisibleSoon(
+      this.page.locator(`#signin-form2 [name="${field}"].error`).first(),
+      timeout,
+    );
   }
 
   async activate(activationPath: string): Promise<void> {
@@ -231,7 +231,7 @@ export class CapetownAuthPage extends BasePage {
   }
 
   /** True when the header renders the signed-in variant of `#user`. */
-  async isSignedIn(): Promise<boolean> {
-    return this.page.locator('#user.signedin').first().isVisible();
+  async isSignedIn(timeout?: number): Promise<boolean> {
+    return this.isVisibleSoon(this.page.locator('#user.signedin').first(), timeout);
   }
 }
