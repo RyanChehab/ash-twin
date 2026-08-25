@@ -1,11 +1,8 @@
 import { test, expect } from '../../../helpers/test';
 import type { RegisterData } from '../../../types/user';
 
-/**
- * Native auth vitality specs — every squaremaze-frontend tenant runs these
- * (default theme AND capetown theme). The tests here only exercise fields
- * guaranteed to be rendered on both themes
-**/
+
+// Native auth vitality specs for default theme AND capetown theme
 
 const validBase = (email?: string): RegisterData => ({
   firstName: 'Ash',
