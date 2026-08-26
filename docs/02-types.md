@@ -9,7 +9,7 @@ The `types/` folder holds SquareMaze **domain shapes** — the vocabulary tests 
 | `event.ts` | `Event`, `EventCriteria`, `EventRep`, `EventModel` | An event and how to filter for one |
 | `category.ts` | `Category`, `CategoryCriteria`, `CategoryNumbering`, `CategoryMode`, `CategoryPubStatus` | A category (ticket tier) and how to filter |
 | `addon.ts` | `Addon`, `AddonCriteria`, `AddonLink` | An addon row (event with `event_addon=1`) and its many-to-many link |
-| `ticket.ts` | `Ticket` | A purchased ticket returned from checkout |
+| `order.ts` | `Order` | The order returned from checkout (orderRef + payment status) |
 | `seat.ts` | `SeatRef` | A seated-category seat reference |
 | `user.ts` | `RegisterData`, `LoginCreds` | Auth form inputs |
 | `tenant.ts` | `TenantConfig`, `TenantDb`, `TenantUsers`, `UserCreds` | Runtime tenant configuration |

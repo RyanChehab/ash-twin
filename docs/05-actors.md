@@ -76,7 +76,7 @@ customer.payWith(paymentKey, testCard?, opts?)   // strategy-driven, see 10-paym
 customer.submitCheckout()          // low-level: just click submit; payWith orchestrates around it
 
 // Result
-customer.readTicket()              // reads confirmation page → { orderRef, status }
+customer.pages.confirmation.readOrder()  // reads confirmation page → { orderRef, status }
 ```
 
 **Why proceedToCheckout doesn't auto-skip the products page:** the interstitial shows addons + shop products. Future tests will interact with them (add an addon to cart, tick an insurance option) BEFORE continuing. Baking a skip into `proceedToCheckout` would require ripping it back out. Explicit two-step keeps the intent visible in every spec.
@@ -93,7 +93,7 @@ async buyTicket(event, category, quantity, userInfo?) {
   await this.proceedToCheckout();
   if (userInfo) await this.fillCheckout(userInfo);
   await this.submitCheckout();
-  return await this.readTicket();
+  return await this.pages.confirmation.readOrder();
 }
 ```
 

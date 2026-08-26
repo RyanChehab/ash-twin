@@ -5,7 +5,7 @@ Granular documentation of the framework. Each file covers one concern; read in o
 ## Reading order
 
 1. [Architecture](./01-architecture.md) — the four layers and how they hand off
-2. [Types](./02-types.md) — domain shapes (Event, Category, Ticket, selectors)
+2. [Types](./02-types.md) — domain shapes (Event, Category, Order, selectors)
 3. [Resolver](./03-resolver.md) — how tests pick entities to work with
 4. [Page objects](./04-page-objects.md) — UI abstraction, base + tenant overrides
 5. [Actors](./05-actors.md) — business orchestration on top of pages

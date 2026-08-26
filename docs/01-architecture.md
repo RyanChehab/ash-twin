@@ -40,7 +40,7 @@ Four layers, each with one job. Higher layers use lower ones; lower layers never
 3. Test calls resolver.event({...}) → SQL against tenant DB → Event object
 4. Test calls customer.buyTicket(event, ...) → actor composes page calls
 5. Page objects click / fill in the real browser
-6. Test asserts on returned Ticket or DB state
+6. Test asserts on returned Order or DB state
 ```
 
 ## The seam that hides tenant differences
