@@ -31,6 +31,9 @@ Every concrete page extends it. Provides:
 - `protected waitReady()` — wait for DOM ready
 - `protected waitForNetworkIdle()` — stronger wait, used by SPAs
 - `protected assertUrl(pattern)` — verify current URL
+- `protected isVisibleSoon(locator, timeout = WAIT.LONG)` — try/catch around `waitFor({ state: 'visible', timeout })`, returns `boolean` without throwing. Use for "is this eventually visible?" checks; instant `.isVisible()` races async DOM (jQuery Validate remote rules, AJAX renders).
+
+Shared timeout budgets (`WAIT`): `QUICK: 1.5s`, `MEDIUM: 5s`, `LONG: 30s`. Positive assertions can pass `WAIT.LONG`; negative assertions (`expect(...).toBe(false)`) should pass `WAIT.QUICK` or a custom short value — otherwise each negative check waits the full timeout.
 
 No selectors, no URL. Each concrete page adds those.
 

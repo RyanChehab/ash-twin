@@ -157,13 +157,36 @@ Strategies never touch these directly — the actor does — but they receive th
 
 ## Worked example — `cybersource_unified`
 
-Cybersource Unified Checkout renders across **multiple cross-origin iframes** on `checkout_confirm.tpl`. The plugin's PHP only outputs empty container divs; the SDK (loaded from a per-session URL) populates them. The iframes SWAP as the SDK transitions between states (buttonlist → mce → 3DS challenge), so caching a locator to a specific iframe breaks after any state change.
+Cybersource Unified Checkout renders across **multiple cross-origin iframes** on `checkout_confirm.tpl`. The plugin's PHP only outputs empty container divs; the SDK (loaded from a per-session URL) populates them. The iframes SWAP as the SDK transitions between states (buttonlist → card entry → summary → 3DS challenge), so caching a locator to a specific iframe breaks after any state change.
 
-**Frame-walk pattern.** Instead of pinning iframes, we re-scan `page.frames()` after every interaction, filter by URL substring (`cybersource.com` for the SDK, `cardinal|centinel|3ds` for the 3DS challenge), and pick the frame that currently contains the element we need:
+**The plugin uses `autoProcessing: false`.** Look at `includes/plugins/eph_cybersource_unified.php`:
+
+```js
+var checkout = await client.createCheckout({ autoProcessing: false });
+var transientToken = await checkout.mount({...});   // resolves after user commits card
+document.getElementById("unified-checkout-container").style.display = "none";
+var completedJwt = await checkout.complete(transientToken);   // frictionless 3DS + auth
+document.getElementById("payment-form").submit();    // auto-submit after complete()
+```
+
+The SDK does NOT auto-submit on card fill — it waits until the user's SDK-driven "commit" resolves `checkout.mount()`. On cca that commit takes **two Continue clicks inside iframes**:
+
+1. **Card-entry Continue** — user has filled card number, expiry, CVV, first name, last name. Continue advances the SDK to the summary screen.
+2. **Summary Continue** — the SDK collapses the form to a masked card ("Visa •••• 1111") + "Save my information for future purchases" checkbox + Continue button. This Continue resolves `mount()` with the `transientToken`. Then the plugin's JS runs `checkout.complete()` (frictionless 3DS) and auto-submits the top-level `#payment-form`.
+
+Both Continues live inside Cybersource iframes — the plugin renders no parent-page CTA. Do NOT search `page` for a Continue button; the strategy's `waitForEnabledButtonInFrames` explicitly excludes `page.mainFrame()`.
+
+**Frame-walk pattern.** Instead of pinning iframes, we re-scan `page.frames()` after every interaction, filter by URL substring (`cybersource.com` for the SDK, `cardinal|centinel|3ds` for the 3DS challenge) or by content, and pick the frame that currently contains the element we need:
 
 ```ts
+// find by role match
 const cardEntryFrame = await waitForFrameWith(page, 30_000, (frame) =>
   hasVisible(frame, 'textbox', /card number|pan/i),
+);
+
+// find by unique text on that screen
+const summaryFrame = await waitForFrameWith(page, 30_000, (frame) =>
+  hasVisibleText(frame, /save my (info|information)/i),
 );
 ```
 
@@ -171,11 +194,15 @@ Each helper wraps frame probes in try/catch — frames attach/detach during SDK 
 
 **Role/label selectors, not CSS classes.** Inside the SDK's iframes, Cybersource owns the DOM. Class names shift between SDK versions. Role-based selectors (`getByRole('textbox', { name: /card number/i })`, `getByRole('button', { name: /continue/i })`) survive across releases because Cybersource maintains the accessibility contract.
 
-**No `#pay-button` from us.** In Frames, the plugin renders its own submit button and calls `Frames.submitCard()`. In Unified Checkout, the SDK owns the submit button — we click it INSIDE the iframe, and it calls `paymentForm.submit()` on our top-level form itself.
+**Blur before advancing.** After `.fill()` on the last field (last name), call `.press('Tab')`. The SDK enables Continue on `blur`, and `.fill()` doesn't emit it — without the Tab, Continue stays disabled and the click silently no-ops.
 
-**3DS handling — polled, not awaited.** Cybersource's 3DS challenge appears in a nested iframe on `authentication-devices.sandbox.checkout.com/…`. We can't `waitForURL` because the outer page URL doesn't change. Instead we poll every 500ms up to 60s:
+**Wait for enabled, not just visible.** `hasVisible()` returns true for disabled buttons. `waitForEnabledButtonInFrames` checks both `isVisible()` and `isEnabled()`. Clicking a disabled button silently no-ops → 60s timeout on the next poll.
+
+**3DS handling — polled, not awaited.** Cybersource routes 3DS through Cardinal Commerce. Challenge iframes have URLs matching `centinelapistag.cardinalcommerce.com`, `geostag.cardinalcommerce.com`, or `cardinaltrusted*`. We can't `waitForURL` because the outer page URL doesn't change. Instead we poll every 500ms up to 60s:
 - If `h1.success/pending/fail` appears on the parent page → done.
-- Else, look for a Cardinal/Centinel frame containing a text field and a Continue/Submit/Verify button. If found, fill the OTP and click.
+- Else, look for a Cardinal/Centinel frame containing a text field and a Continue/Submit/Verify button. If found, fill the sandbox OTP `1234` and click.
+
+The `visaSuccess` card runs **frictionless** 3DS (device fingerprint only, no OTP screen). The `visa3ds` card triggers a **challenge** 3DS with the OTP prompt.
 
 `opts.cancelChallenge` swaps the fill-and-continue path for a click-Cancel path — used to test the "user aborted 3DS → payment fails" scenario.
 

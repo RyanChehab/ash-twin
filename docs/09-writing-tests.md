@@ -123,16 +123,18 @@ Every step is verified on both sides, and the `finally` cleans the row even if t
 
 ## Long-running tests raise their own timeout
 
-Payment tests run through real sandbox gateways and need more time than the default 30s:
+The global per-test timeout is 60s (`playwright.config.ts` → `timeout: 60_000`); `actionTimeout` is 30s and `navigationTimeout` is 60s. Payment tests run through real sandbox gateways and need more:
 
 ```ts
-test(15, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   test.setTimeout(120_000);   // gateway sandbox + 3DS
   // ...
 });
 ```
 
-Raise per-test, not globally. Auth tests still fail loudly at 30s when something's stuck.
+Raise per-test, not globally. Auth tests still fail loudly at 60s when something's stuck.
+
+Renumbered ID reference: payment tests are 16 (visa no-3DS), 17 (visa 3DS complete), 18 (visa 3DS cancel), 21 (Tabby), and 19 (anonymous → auth redirect).
 
 ## Rules to write down
 
