@@ -45,7 +45,7 @@ export abstract class BasePage {
     }
   }
 
-  protected async isVisibleSoon(locator: Locator, timeout = WAIT.MEDIUM): Promise<boolean> {
+  protected async isVisibleSoon(locator: Locator, timeout: number = WAIT.MEDIUM): Promise<boolean> {
     try { await locator.waitFor({ state: 'visible', timeout }); return true; }
     catch { return false; }
   }
