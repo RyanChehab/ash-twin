@@ -9,7 +9,7 @@ import type { Locator, Page } from '@playwright/test';
  */
 export const WAIT = {
   QUICK:  1_500,
-  MEDIUM: 5_000,
+  MEDIUM: 10_000,
   LONG:   30_000,
 } as const;
 
@@ -45,7 +45,7 @@ export abstract class BasePage {
     }
   }
 
-  protected async isVisibleSoon(locator: Locator, timeout = WAIT.LONG): Promise<boolean> {
+  protected async isVisibleSoon(locator: Locator, timeout = WAIT.MEDIUM): Promise<boolean> {
     try { await locator.waitFor({ state: 'visible', timeout }); return true; }
     catch { return false; }
   }
