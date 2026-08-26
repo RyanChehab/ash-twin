@@ -26,14 +26,14 @@ test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   await customer.pages.auth.open();
   await customer.pages.auth.login(creds);
 
-  const ticket = await customer.buyTicket(event, category, 1, {
+  const order = await customer.buyTicket(event, category, 1, {
     payment: { key: 'cybersource_unified', card: cards.visaSuccess },
   });
 
-  expect(ticket.orderRef).toBeTruthy();
-  expect(ticket.status).toBe('paid');
+  expect(order.orderRef).toBeTruthy();
+  expect(order.status).toBe('paid');
 
-  feedback(`event ${event.id} category ${category.id}: paid order ${ticket.orderRef}`);
+  feedback(`event ${event.id} category ${category.id}: paid order ${order.orderRef}`);
 });
 
 test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
@@ -51,14 +51,14 @@ test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   await customer.pages.auth.open();
   await customer.pages.auth.login(creds);
 
-  const ticket = await customer.buyTicket(event, category, 1, {
+  const order = await customer.buyTicket(event, category, 1, {
     payment: { key: 'cybersource_unified', card: cards.visa3ds },
   });
 
-  expect(ticket.orderRef).toBeTruthy();
-  expect(ticket.status).toBe('paid');
+  expect(order.orderRef).toBeTruthy();
+  expect(order.status).toBe('paid');
 
-  feedback(`event ${event.id} category ${category.id}: 3DS paid order ${ticket.orderRef}`);
+  feedback(`event ${event.id} category ${category.id}: 3DS paid order ${order.orderRef}`);
 });
 
 test(18, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
@@ -76,7 +76,7 @@ test(18, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   await customer.pages.auth.open();
   await customer.pages.auth.login(creds);
 
-  const ticket = await customer.buyTicket(event, category, 1, {
+  const order = await customer.buyTicket(event, category, 1, {
     payment: {
       key:          'cybersource_unified',
       card:         cards.visa3ds,
@@ -84,9 +84,9 @@ test(18, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
     },
   });
 
-  expect(ticket.status).toBe('failed');
+  expect(order.status).toBe('failed');
 
-  feedback(`event ${event.id} category ${category.id}: 3DS cancelled → status ${ticket.status}`);
+  feedback(`event ${event.id} category ${category.id}: 3DS cancelled → status ${order.status}`);
 });
 
 test(21, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
@@ -104,17 +104,17 @@ test(21, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   await customer.pages.auth.open();
   await customer.pages.auth.login(creds);
 
-  const ticket = await customer.buyTicket(event, category, 1, {
+  const order = await customer.buyTicket(event, category, 1, {
     payment: {
       key:          'tabby',
       strategyOpts: { identity: tabbyIdentities.success },
     },
   });
 
-  expect(ticket.orderRef).toBeTruthy();
-  expect(ticket.status).toBe('paid');
+  expect(order.orderRef).toBeTruthy();
+  expect(order.status).toBe('paid');
 
-  feedback(`event ${event.id} category ${category.id}: tabby paid order ${ticket.orderRef}`);
+  feedback(`event ${event.id} category ${category.id}: tabby paid order ${order.orderRef}`);
 });
 
 test(19, 'vitality', async ({ customer, resolver, feedback }) => {

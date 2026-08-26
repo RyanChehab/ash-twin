@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import type { TenantConfig } from '../types/tenant';
 import type { Event } from '../types/event';
 import type { Category } from '../types/category';
-import type { Ticket } from '../types/ticket';
+import type { Order } from '../types/order';
 import type { WebPages } from '../pages/web/types';
 import type { CheckoutUserInfo } from '../pages/web/default/checkout';
 import type { TestCard } from '../payments';
@@ -94,7 +94,7 @@ export class WebCustomer {
 
   /**
    * Full purchase flow: event → cart → (skip products interstitial if shown) →
-   * checkout → optional payment → confirmation. Returns the resulting Ticket.
+   * checkout → optional payment → confirmation. Returns the resulting Order.
    *
    * Auto-skips the products interstitial when present — this composite is the
    * "happy-path buy". Tests that need to interact with addons/products should
@@ -105,7 +105,7 @@ export class WebCustomer {
     category: Category,
     quantity: number,
     opts?:    BuyTicketOpts,
-  ): Promise<Ticket> {
+  ): Promise<Order> {
     await this.openEvent(event);
     await this.pages.event.pickCategory(category.id);
     await this.pages.event.setQuantity(category.id, quantity);
@@ -127,6 +127,6 @@ export class WebCustomer {
       await this.pages.checkout.submit();
     }
 
-    return await this.pages.confirmation.readTicket();
+    return await this.pages.confirmation.readOrder();
   }
 }

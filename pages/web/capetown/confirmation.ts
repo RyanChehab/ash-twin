@@ -1,6 +1,6 @@
 import type { Locator } from '@playwright/test';
 import { BasePage } from '../base';
-import type { Ticket } from '../../../types/ticket';
+import type { Order } from '../../../types/order';
 
 export type ConfirmationStatus = 'paid' | 'pending' | 'failed' | 'unknown';
 
@@ -27,7 +27,7 @@ export class CapetownConfirmationPage extends BasePage {
     return (await this.successHeading.count()) > 0;
   }
 
-  async readTicket(): Promise<Ticket> {
+  async readOrder(): Promise<Order> {
     return {
       orderRef: (await this.orderRef()) ?? '',
       status:   await this.status(),
