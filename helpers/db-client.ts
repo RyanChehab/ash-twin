@@ -1,5 +1,6 @@
 import mysql, { Pool, RowDataPacket } from 'mysql2/promise';
 import type { TenantDb } from '../types/tenant';
+import type { OrderPaymentStatus, OrderRow, OrderStatus } from '../types/order';
 
 /**
  * Thin wrapper around a mysql2 connection pool for one tenant's DB.
@@ -107,6 +108,29 @@ export class DbClient {
       r => !!r && r.user_active === 1 && r.active === null,
     );
     return !!row && row.user_active === 1 && row.active === null;
+  }
+
+  // ── orders: DB-side verification for purchase specs ────────────────────
+
+  /**
+   * Fetch an order's DB state by its numeric ref (as displayed on
+   * `checkout_result.tpl`). Returns `null` when the ref isn't numeric or the
+   * row doesn't exist. Committed-paid = `status='ord'` + `paymentStatus='paid'`.
+   */
+  async orderById(orderRef: string | number): Promise<OrderRow | null> {
+    const id = Number(orderRef);
+    if (!Number.isFinite(id) || id <= 0) return null;
+    const row = await this.one<{
+      order_id: number;
+      order_status: OrderStatus;
+      order_payment_status: OrderPaymentStatus;
+    }>(
+      'SELECT order_id, order_status, order_payment_status FROM `order` WHERE order_id = ? LIMIT 1',
+      [id],
+    );
+    return row
+      ? { orderId: row.order_id, status: row.order_status, paymentStatus: row.order_payment_status }
+      : null;
   }
 
   /** Remove the test-created user + its auth row. Safe to call even if the user was never created. */

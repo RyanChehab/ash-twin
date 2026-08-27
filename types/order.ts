@@ -8,3 +8,12 @@ export interface Order {
   status: 'paid' | 'pending' | 'failed' | 'unknown';
   data?: Record<string, unknown>;
 }
+
+export type OrderStatus        = 'ord' | 'cancel' | 'reemit' | 'reissue' | 'trash' | 'res' | 'pros' | 'credit';
+export type OrderPaymentStatus = 'none' | 'pending' | 'paid' | 'payed' | 'canceled' | 'cancelled';
+
+export interface OrderRow {
+  orderId:       number;
+  status:        OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+}

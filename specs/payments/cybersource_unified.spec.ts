@@ -11,7 +11,7 @@ test.beforeAll(async ({ admin, db }) => {
 
 
 
-test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(16, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox
 
   const creds    = requireTestCustomer(tenant);
@@ -33,10 +33,15 @@ test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   expect(order.orderRef).toBeTruthy();
   expect(order.status).toBe('paid');
 
+  const dbOrder = await db.orderById(order.orderRef);
+  expect(dbOrder, `order ${order.orderRef} not found in DB`).not.toBeNull();
+  expect(dbOrder?.paymentStatus).toBe('paid');
+  expect(dbOrder?.status).toBe('ord');
+
   feedback(`event ${event.id} category ${category.id}: paid order ${order.orderRef}`);
 });
 
-test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(17, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(120_000);   // paid checkout + 3DS challenge
 
   const creds    = requireTestCustomer(tenant);
@@ -58,10 +63,15 @@ test(17, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
   expect(order.orderRef).toBeTruthy();
   expect(order.status).toBe('paid');
 
+  const dbOrder = await db.orderById(order.orderRef);
+  expect(dbOrder, `order ${order.orderRef} not found in DB`).not.toBeNull();
+  expect(dbOrder?.paymentStatus).toBe('paid');
+  expect(dbOrder?.status).toBe('ord');
+
   feedback(`event ${event.id} category ${category.id}: 3DS paid order ${order.orderRef}`);
 });
 
-test(18, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(18, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(120_000);
 
   const creds    = requireTestCustomer(tenant);
@@ -86,10 +96,15 @@ test(18, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
 
   expect(order.status).toBe('failed');
 
+  if (order.orderRef) {
+    const dbOrder = await db.orderById(order.orderRef);
+    expect(dbOrder?.paymentStatus).not.toBe('paid');
+  }
+
   feedback(`event ${event.id} category ${category.id}: 3DS cancelled → status ${order.status}`);
 });
 
-test(21, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+test(21, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(180_000);
 
   const creds    = requireTestCustomer(tenant);
@@ -113,6 +128,11 @@ test(21, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
 
   expect(order.orderRef).toBeTruthy();
   expect(order.status).toBe('paid');
+
+  const dbOrder = await db.orderById(order.orderRef);
+  expect(dbOrder, `order ${order.orderRef} not found in DB`).not.toBeNull();
+  expect(dbOrder?.paymentStatus).toBe('paid');
+  expect(dbOrder?.status).toBe('ord');
 
   feedback(`event ${event.id} category ${category.id}: tabby paid order ${order.orderRef}`);
 });
