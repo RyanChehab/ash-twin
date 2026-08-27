@@ -358,7 +358,8 @@ export class Resolver {
         c.category_numbering AS numbering,
         c.category_mode      AS mode,
         c.category_web       AS webStatus,
-        c.category_pos       AS posStatus
+        c.category_pos       AS posStatus,
+        c.category_b2b       AS b2bStatus
       FROM category c
       WHERE ${where}
       ORDER BY c.category_id DESC

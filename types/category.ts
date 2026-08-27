@@ -28,6 +28,7 @@ export interface Category {
 
   webStatus?: CategoryPubStatus;
   posStatus?: CategoryPubStatus;
+  b2bStatus?: CategoryPubStatus;
 
   data?: Record<string, unknown>;
 }
