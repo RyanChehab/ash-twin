@@ -36,7 +36,7 @@ export default defineConfig({
     {
       name: 'cca-staging',
       testDir: './specs',
-      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/default/**/*.spec.ts'],
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/default/**/*.spec.ts', 'payments/**/cybersource_unified.spec.ts'],
       metadata: { tenant: 'cca', env: 'staging' },
     },
     {
