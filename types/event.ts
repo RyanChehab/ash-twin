@@ -1,5 +1,6 @@
 import type { CategoryCriteria } from './category';
 import type { AddonCriteria } from './addon';
+import type { PaymentKey } from './handling';
 
 export type EventRep = 'unique' | 'main' | 'sub';
 
@@ -40,4 +41,6 @@ export interface EventCriteria {
 
   hasAddons?:   AddonCriteria;   // event MUST have an addon matching this shape
   hasNoAddons?: AddonCriteria;   // event MUST NOT have any addon matching this shape
+
+  hasHandling?: PaymentKey;
 }

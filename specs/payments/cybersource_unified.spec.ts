@@ -15,7 +15,7 @@ test(16, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox
 
   const creds    = requireTestCustomer(tenant);
-  const event    = await resolver.event(events.normal);
+  const event    = await resolver.event({ ...events.normal, hasHandling: 'cybersource_unified' });
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -45,7 +45,7 @@ test(17, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(120_000);   // paid checkout + 3DS challenge
 
   const creds    = requireTestCustomer(tenant);
-  const event    = await resolver.event(events.normal);
+  const event    = await resolver.event({ ...events.normal, hasHandling: 'cybersource_unified' });
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -75,7 +75,7 @@ test(18, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(120_000);
 
   const creds    = requireTestCustomer(tenant);
-  const event    = await resolver.event(events.normal);
+  const event    = await resolver.event({ ...events.normal, hasHandling: 'cybersource_unified' });
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
@@ -108,7 +108,7 @@ test(21, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
   test.setTimeout(180_000);
 
   const creds    = requireTestCustomer(tenant);
-  const event    = await resolver.event(events.normal);
+  const event    = await resolver.event({ ...events.normal, hasHandling: 'tabby' });
   const category = await resolver.category({
     eventId:      event.id,
     numbering:    'none',
