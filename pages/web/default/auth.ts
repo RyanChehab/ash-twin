@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test';
-import { BasePage } from '../base';
+import { BasePage, WAIT } from '../base';
 import type { RegisterData, LoginCreds } from '../../../types/user';
 
 /**
@@ -207,8 +207,9 @@ export class DefaultAuthPage extends BasePage {
   }
 
   async submitLogin(): Promise<void> {
+    const previousUrl = this.page.url();
     await this.loginSubmit.click();
-    await this.waitReady();
+    await this.page.waitForURL(u => u.href !== previousUrl, { timeout: WAIT.MEDIUM });
   }
 
   async login(creds: LoginCreds): Promise<void> {
