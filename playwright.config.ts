@@ -17,7 +17,7 @@ export default defineConfig({
   use: {
     ignoreHTTPSErrors: false,
     trace: 'on-first-retry',
-    screenshot: 'on',
+    screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 30_000,
     navigationTimeout: 60_000,
