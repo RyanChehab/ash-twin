@@ -17,7 +17,7 @@ export const cybersource_unified: PaymentStrategy = {
   paymentKey: 'cybersource_unified',
 
   async complete(page, { testCard, opts }) {
-    if (!testCard) throw new Error(`cybersource_unified.complete requires a testCard`);
+    const card            = testCard ?? cards.visaSuccess;
     const cancelChallenge = !!opts?.cancelChallenge;
 
     await page.waitForSelector('#payment-form', { timeout: 20_000 });
@@ -37,14 +37,14 @@ export const cybersource_unified: PaymentStrategy = {
     const cardEntry = await pollFrames(page, 30_000, 'card entry frame', async (frame) =>
       (await visible(frame.getByRole('textbox', { name: /card number|pan/i }))) ? frame : null,
     );
-    await cardEntry.getByRole('textbox', { name: /card number|pan/i }).fill(testCard.number);
+    await cardEntry.getByRole('textbox', { name: /card number|pan/i }).fill(card.number);
 
-    const [month, year] = testCard.expiry.split('/').map((s) => s.trim());
+    const [month, year] = card.expiry.split('/').map((s) => s.trim());
     await cardEntry.getByRole('combobox', { name: /expiry month/i }).selectOption(month);
     await cardEntry.getByRole('combobox', { name: /expiry year/i }).selectOption(year);
-    await cardEntry.getByRole('textbox', { name: /security code|cvv|cvc/i }).fill(testCard.cvc);
+    await cardEntry.getByRole('textbox', { name: /security code|cvv|cvc/i }).fill(card.cvc);
 
-    const [firstName, lastName] = (testCard.name ?? 'Test Customer').split(' ', 2);
+    const [firstName, lastName] = (card.name ?? 'Test Customer').split(' ', 2);
     await cardEntry.getByRole('textbox', { name: /first name/i }).fill(firstName);
     const lastNameField = cardEntry.getByRole('textbox', { name: /last name/i });
     await lastNameField.fill(lastName ?? 'Customer');

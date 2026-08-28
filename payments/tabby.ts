@@ -29,8 +29,7 @@ export const tabby: PaymentStrategy = {
   paymentKey: 'tabby',
 
   async complete(page, ctx) {
-    const identity = ctx.opts?.identity as TabbyIdentity | undefined;
-    if (!identity) throw new Error(`tabby.complete requires opts.identity`);
+    const identity = (ctx.opts?.identity as TabbyIdentity | undefined) ?? identities.success;
 
     await Promise.all([
       page.waitForURL(/checkout\.tabby\.ai/, { timeout: 30_000 }),
