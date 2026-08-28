@@ -8,7 +8,7 @@ import type { CheckoutUserInfo } from '../pages/web/default/checkout';
 import type { TestCard } from '../payments';
 import { webPages } from '../pages/web/factory';
 import { Resolver } from '../helpers/resolver';
-import { getPaymentStrategy } from '../payments';
+import { getPaymentStrategy, registeredPaymentKeys } from '../payments';
 
 export interface BuyTicketOpts {
   userInfo?: CheckoutUserInfo;
@@ -16,7 +16,7 @@ export interface BuyTicketOpts {
     key:           string;
     card?:         TestCard;
     strategyOpts?: Record<string, unknown>;
-  };
+  } | 'any';
 }
 
 /**
@@ -93,6 +93,28 @@ export class WebCustomer {
   }
 
   /**
+   * Pay using whichever rendered handling has a registered strategy. Lets a
+   * native test purchase across tenants without naming a gateway — the
+   * tenant's own configuration decides. Each strategy handles its own
+   * sandbox defaults when called without explicit card/opts.
+   */
+  async payWithAny(): Promise<void> {
+    const available  = await this.pages.checkout.readAvailableHandlings();
+    const registered = new Set(registeredPaymentKeys());
+
+    for (const h of available) {
+      if (registered.has(h.paymentKey)) return this.payWith(h.paymentKey);
+    }
+
+    const availList = available.map(h => h.paymentKey).join(', ') || '(none)';
+    const regList   = [...registered].join(', ') || '(none)';
+    throw new Error(
+      `payWithAny: no rendered handling has a registered strategy. ` +
+      `Rendered: [${availList}]. Registered: [${regList}].`,
+    );
+  }
+
+  /**
    * Full purchase flow: event → cart → (skip products interstitial if shown) →
    * checkout → optional payment → confirmation. Returns the resulting Order.
    *
@@ -121,7 +143,9 @@ export class WebCustomer {
       await this.pages.checkout.fillUserInfo(opts.userInfo);
     }
 
-    if (opts?.payment) {
+    if (opts?.payment === 'any') {
+      await this.payWithAny();
+    } else if (opts?.payment) {
       await this.payWith(opts.payment.key, opts.payment.card, opts.payment.strategyOpts);
     } else {
       await this.pages.checkout.submit();
