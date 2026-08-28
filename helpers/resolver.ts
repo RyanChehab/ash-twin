@@ -193,19 +193,23 @@ export class Resolver {
     }
 
     if (c.hasHandling) {
-      parts.push(`EXISTS (
-        SELECT 1
-        FROM handling h
-        JOIN plugins pp ON pp.plugin_name = CONCAT('eph_', h.handling_payment) AND pp.plugin_enabled = 1
-        JOIN plugins ps ON ps.plugin_name = CONCAT('esm_', h.handling_shipment) AND ps.plugin_enabled = 1
-        WHERE h.handling_payment = ?
-          AND h.handling_sale_mode LIKE '%www%'
-          AND (
-            e.event_shipments IS NULL OR e.event_shipments = ''
-            OR FIND_IN_SET(h.handling_shipment, e.event_shipments) > 0
-          )
-      )`);
-      params.push(c.hasHandling);
+      const keys = Array.isArray(c.hasHandling) ? c.hasHandling : [c.hasHandling];
+      if (keys.length > 0) {
+        const placeholders = keys.map(() => '?').join(', ');
+        parts.push(`EXISTS (
+          SELECT 1
+          FROM handling h
+          JOIN plugins pp ON pp.plugin_name = CONCAT('eph_', h.handling_payment) AND pp.plugin_enabled = 1
+          JOIN plugins ps ON ps.plugin_name = CONCAT('esm_', h.handling_shipment) AND ps.plugin_enabled = 1
+          WHERE h.handling_payment IN (${placeholders})
+            AND h.handling_sale_mode LIKE '%www%'
+            AND (
+              e.event_shipments IS NULL OR e.event_shipments = ''
+              OR FIND_IN_SET(h.handling_shipment, e.event_shipments) > 0
+            )
+        )`);
+        params.push(...keys);
+      }
     }
 
     // Sub events want date-forward ordering (surface the next upcoming date first).
