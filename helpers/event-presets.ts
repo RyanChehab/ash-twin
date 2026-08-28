@@ -25,7 +25,6 @@ export const events = {
     parentViewable:     true,
     isPresale:          false,
     isPrivate:          false,
-    requiresNationalId: false,
     requiresLogin:      false,
     hasNoAddons:        webCheckoutAddon,
     hasCategory: {
@@ -46,7 +45,6 @@ export const events = {
     parentViewable:     true,
     isPresale:          true,
     isPrivate:          false,
-    requiresNationalId: false,
     requiresLogin:      false,
     hasNoAddons:        webCheckoutAddon,
     hasCategory: {
@@ -67,7 +65,6 @@ export const events = {
     parentViewable:     true,
     isPresale:          false,
     isPrivate:          true,
-    requiresNationalId: false,
     requiresLogin:      false,
     hasNoAddons:        webCheckoutAddon,
     hasCategory: {
@@ -137,7 +134,6 @@ export const events = {
     parentViewable:     true,
     isPresale:          false,
     isPrivate:          false,
-    requiresNationalId: false,
     requiresLogin:      false,
     hasNoAddons:        webCheckoutAddon,
     hasCategory: {
@@ -161,7 +157,6 @@ export const events = {
     parentViewable:     true,
     isPresale:          false,
     isPrivate:          false,
-    requiresNationalId: false,
     requiresLogin:      false,
     hasAddons:          webCheckoutAddon,
     hasCategory: {
