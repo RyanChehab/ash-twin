@@ -3,8 +3,8 @@
   "env":  "staging",
   "theme": "capetown",
 
-  "baseUrl": "",
-  "webUrl":  "",
+  "baseUrl": "https://staging.adrea.ae/",
+  "webUrl":  "https://staging.adrea.ae/",
 
   "users": {
     "superadmin": {
