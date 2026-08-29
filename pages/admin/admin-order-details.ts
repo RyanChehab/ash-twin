@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 export class AdminOrderDetailsPage {
+  readonly path = '/admin/orders.php';
   readonly form:            Locator;
   readonly refundButton:    Locator;
   readonly refundDialog:    Locator;
@@ -13,8 +14,12 @@ export class AdminOrderDetailsPage {
     this.seatCheckboxes = page.locator('input[name="place[]"]');
   }
 
+  buildPath(orderId: number): string {
+    return `${this.path}?action=details&order_id=${orderId}`;
+  }
+
   async open(orderId: number): Promise<void> {
-    await this.page.goto(`/admin/index.php?action=details&order_id=${orderId}`);
+    await this.page.goto(this.buildPath(orderId));
     await this.form.waitFor({ state: 'attached' });
   }
 
