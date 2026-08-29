@@ -238,4 +238,13 @@ export class CapetownAuthPage extends BasePage {
   async isSignedIn(timeout?: number): Promise<boolean> {
     return this.isVisibleSoon(this.page.locator('#user.signedin').first(), timeout);
   }
+
+  async logout(): Promise<void> {
+    const widget = this.page.locator('#user.signedin').first();
+    await widget.locator('> a').first().hover();
+    const link = widget.locator('a[href*="action=logout"]').first();
+    await link.waitFor({ state: 'visible' });
+    await link.click();
+    await this.page.waitForLoadState('domcontentloaded');
+  }
 }

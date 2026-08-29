@@ -1,5 +1,6 @@
 import { test, expect } from '../../../helpers/test';
 import type { RegisterData } from '../../../types/user';
+import { requireTestCustomer } from '../../../helpers/tenant';
 
 
 // Native auth vitality specs for default theme AND capetown theme
@@ -171,4 +172,21 @@ test(15, "vitality", async ({ customer, tenant, feedback }) => {
   await auth.login(creds);
   expect(await auth.isSignedIn()).toBe(true);
   feedback(`user ${creds.username} logged in`);
+});
+
+test(25, "vitality", async ({ customer, tenant, feedback }) => {
+  const creds = requireTestCustomer(tenant);
+  const auth  = customer.pages.auth;
+
+  await auth.open();
+  await auth.login(creds);
+  expect(await auth.isSignedIn()).toBe(true);
+
+  await customer.logout();
+  expect(await auth.isSignedIn()).toBe(false);                    // DOM: header shows guest state
+
+  await customer.page.goto('/index.php?action=user_orders');      // server truth: authenticated route
+  expect(await auth.isSignedIn()).toBe(false);                    // responds as anonymous
+
+  feedback(`user ${creds.username} logged out`);
 });

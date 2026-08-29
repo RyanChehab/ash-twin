@@ -80,12 +80,12 @@ export class WebCustomer {
     await strategy.complete(this.page, ctx);
   }
 
-  /**
-   * Pay using whichever rendered handling has a registered strategy. Lets a
-   * native test purchase across tenants without naming a gateway — the
-   * tenant's own configuration decides. Each strategy handles its own
-   * sandbox defaults when called without explicit card/opts.
-   */
+  async logout(): Promise<void> {
+    await this.pages.auth.logout();
+  }
+
+
+// Pay using whichever rendered handling has a registered strategy.
   async payWithAny(): Promise<void> {
     const available  = await this.pages.checkout.readAvailableHandlings();
     const registered = new Set(registeredPaymentKeys());
