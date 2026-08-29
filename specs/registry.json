@@ -20,5 +20,7 @@
   { "id": 19, "title": "an anonymous user is redirected to register when proceeding to checkout" },
   { "id": 20, "title": "empty date of birth blocks submission when show_dob is enabled" },
   { "id": 21, "title": "an authenticated user completes a GA purchase paying by tabby" },
-  { "id": 22, "title": "an authenticated user completes a GA purchase" }
+  { "id": 22, "title": "an authenticated user completes a GA purchase" },
+  { "id": 23, "title": "an authenticated user buys 3 GA tickets and admin fully refunds them" },
+  { "id": 24, "title": "an authenticated user buys 3 GA tickets and admin partially refunds one" }
 ]

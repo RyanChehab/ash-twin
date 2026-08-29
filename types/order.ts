@@ -17,3 +17,17 @@ export interface OrderRow {
   status:        OrderStatus;
   paymentStatus: OrderPaymentStatus;
 }
+
+export interface OrderTicketsInfo {
+  ticketsNr:    number;
+  oldTicketsNr: number;
+}
+
+export interface CreditOrderRow {
+  orderId:       number;
+  originalId:    number;
+  status:        OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  totalPrice:    number;
+  response:      string | null;
+}
