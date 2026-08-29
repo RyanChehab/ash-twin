@@ -23,5 +23,6 @@
   { "id": 22, "title": "an authenticated user completes a GA purchase" },
   { "id": 23, "title": "an authenticated user buys 3 GA tickets and admin fully refunds them" },
   { "id": 24, "title": "an authenticated user buys 3 GA tickets and admin partially refunds one" },
-  { "id": 25, "title": "logout ends the session" }
+  { "id": 25, "title": "logout ends the session" },
+  { "id": 26, "title": "logout empties the cart" }
 ]

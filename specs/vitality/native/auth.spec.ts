@@ -1,6 +1,7 @@
 import { test, expect } from '../../../helpers/test';
 import type { RegisterData } from '../../../types/user';
 import { requireTestCustomer } from '../../../helpers/tenant';
+import { events } from '../../../helpers/event-presets';
 
 
 // Native auth vitality specs for default theme AND capetown theme
@@ -189,4 +190,31 @@ test(25, "vitality", async ({ customer, tenant, feedback }) => {
   expect(await auth.isSignedIn()).toBe(false);                    // responds as anonymous
 
   feedback(`user ${creds.username} logged out`);
+});
+
+test(26, "vitality", async ({ customer, resolver, tenant, feedback }) => {
+  const creds    = requireTestCustomer(tenant);
+  const event    = await resolver.event(events.normal);
+  const category = await resolver.category({
+    eventId:      event.id,
+    numbering:    'none',
+    webPublished: true,
+    soldout:      false,
+  });
+
+  await customer.pages.auth.open();
+  await customer.pages.auth.login(creds);
+
+  // Seed the cart with one ticket.
+  await customer.openEvent(event);
+  await customer.pages.event.pickCategory(category.id);
+  await customer.pages.event.setQuantity(category.id, 1);
+  await customer.pages.event.acceptTerms();
+  await customer.pages.event.addToCart(category.id);
+  expect(await customer.cartItemCount()).toBeGreaterThan(0);
+
+  await customer.logout();
+  expect(await customer.cartItemCount()).toBe(0);
+
+  feedback(`user ${creds.username} logged out with cart cleared`);
 });

@@ -84,6 +84,13 @@ export class WebCustomer {
     await this.pages.auth.logout();
   }
 
+  async cartItemCount(): Promise<number> {
+    const badge = this.page.locator('#cart .cart-count').first();
+    if ((await badge.count()) === 0) return 0;
+    const text = (await badge.textContent()) ?? '0';
+    return parseInt(text.trim(), 10) || 0;
+  }
+
 
 // Pay using whichever rendered handling has a registered strategy.
   async payWithAny(): Promise<void> {
