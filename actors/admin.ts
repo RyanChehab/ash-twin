@@ -4,6 +4,7 @@ import type { DbClient } from '../helpers/db-client';
 import type { Event, FindEventCriteria } from '../types/event';
 import { AdminEventsPage } from '../pages/admin/admin-events-page';
 import { AdminEventFormPage } from '../pages/admin/admin-event-form-page';
+import { AdminOrderDetailsPage } from '../pages/admin/admin-order-details';
 
 export class Admin {
   constructor(
@@ -11,6 +12,12 @@ export class Admin {
     private tenant: TenantConfig,
     private db: DbClient,
   ) {}
+
+  async refundOrder(orderId: number, opts?: { seats?: number | 'all' }): Promise<void> {
+    const page = new AdminOrderDetailsPage(this.page);
+    await page.open(orderId);
+    await page.refund(opts?.seats ?? 'all');
+  }
 
   async clearCache(): Promise<void> {
     const request = this.page.context().request;
@@ -20,10 +27,6 @@ export class Admin {
     await request.get(`${cacheUrl}&action=flush_cache_db`);   // Redis / phpfastcache
   }
 
-  /**
-   * Locate an existing event in the tenant DB matching criteria.
-   * Prefer this over createEvent when the test just needs *an* event to exist.
-   */
   async findEvent(criteria: FindEventCriteria = {}): Promise<Event | null> {
     const where: string[] = [];
     if (criteria.status === 'published')  where.push("e.status = 'published'");
@@ -44,10 +47,6 @@ export class Admin {
     return row ? { id: row.id, title: row.title } : null;
   }
 
-  /**
-   * Drive the admin UI to create a new event.
-   * Throws with the captured error message if the save reports validation failure.
-   */
   async createEvent(payload: Partial<Event> = {}): Promise<Event> {
     const title = payload.title ?? `e2e-event-${Date.now()}`;
 
