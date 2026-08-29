@@ -133,6 +133,13 @@ export class Resolver {
       params.push(c.model);
     }
 
+    if (c.source === 'local') {
+      parts.push('(e.event_source IS NULL OR e.event_source = "")');
+    } else if (c.source) {
+      parts.push('e.event_source = ?');
+      params.push(c.source);
+    }
+
     // Visibility flags — each one only applied when explicitly set.
     if (c.webshop === true)  parts.push('e.event_webshop = 1');
     if (c.webshop === false) parts.push('e.event_webshop = 0');
