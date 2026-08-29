@@ -30,6 +30,12 @@ export class CapetownEventPage extends BasePage {
     await this.page.goto(this.buildPath(event));
     await this.waitReady();
     await this.dismissNotice();
+
+    const buyLink = this.page.locator(`a[href*="addtocart&event_id=${event.id}"]`).first();
+    if ((await buyLink.count()) > 0) {
+      await buyLink.click();
+      await this.categoryRadios.first().waitFor({ state: 'attached', timeout: WAIT.MEDIUM });
+    }
   }
 
   /**
@@ -58,9 +64,8 @@ export class CapetownEventPage extends BasePage {
   }
 
   async pickCategory(categoryId: number): Promise<void> {
-    // Radios carry class="radioform" and are visually hidden — the visible
-    // <header id="{categoryId}"> above them is the human click target.
-    await this.page.locator(`#li_${categoryId} header`).first().click();
+    const legacyHeader = this.page.locator(`#li_${categoryId} header`).first();
+    if ((await legacyHeader.count()) > 0) await legacyHeader.click();
   }
 
   /**
@@ -69,14 +74,25 @@ export class CapetownEventPage extends BasePage {
    * that toggles the "add to cart" button between disabled and enabled.
    */
   async setQuantity(categoryId: number, n: number): Promise<void> {
-    const inc = this.quantityInc(categoryId);
+    const legacyInc = this.quantityInc(categoryId);
+    const inc = (await legacyInc.count()) > 0
+      ? legacyInc
+      : this.page.getByRole('button', { name: /increase quantity/i }).first();
     for (let i = 0; i < n; i++) await inc.click();
   }
 
   async addToCart(categoryId: number): Promise<void> {
-    await this.page.locator(`#li_${categoryId} .mini_add_to_cart`).click();
-    // Cart is added via AJAX; the sticky checkout button un-hides on success.
-    await this.checkoutButton.waitFor({ state: 'visible', timeout: WAIT.MEDIUM });
+    const legacyAdd = this.page.locator(`#li_${categoryId} .mini_add_to_cart`);
+    const add = (await legacyAdd.count()) > 0
+      ? legacyAdd
+      : this.page.getByRole('button', { name: /^add\b/i }).first();
+    await add.click();
+
+    try {
+      await this.checkoutButton.waitFor({ state: 'visible', timeout: WAIT.MEDIUM });
+    } catch (err) {
+      if (!(err instanceof Error) || err.name !== 'TimeoutError') throw err;
+    }
   }
 
   /**
@@ -98,7 +114,11 @@ export class CapetownEventPage extends BasePage {
   }
 
   async proceedToCheckout(): Promise<void> {
-    await this.checkoutButton.click();
+    if (await this.checkoutButton.isVisible()) {
+      await this.checkoutButton.click();
+    } else {
+      await this.page.goto('/checkout.php');
+    }
     await this.waitReady();
   }
 

@@ -80,7 +80,7 @@ export class DefaultCheckoutPage extends BasePage {
       if (lbl) lbl.style.display = '';
     }, paymentKey);
     const label = this.page.locator(
-      `label.radio-option:has(input[name="handling_id"][data-payment-type="${paymentKey}"])`,
+      `label:has(input[name="handling_id"][data-payment-type="${paymentKey}"])`,
     );
     await label.click();
     return label;
