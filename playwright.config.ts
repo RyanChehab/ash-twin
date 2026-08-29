@@ -51,5 +51,29 @@ export default defineConfig({
       testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
       metadata: { tenant: 'theagenda', env: 'staging' },
     },
+    {
+      name: 'adrea-local',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
+      metadata: { tenant: 'adrea', env: 'local' },
+    },
+    {
+      name: 'adrea-staging',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
+      metadata: { tenant: 'adrea', env: 'staging' },
+    },
+    {
+      name: 'blublood-local',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
+      metadata: { tenant: 'blublood', env: 'local' },
+    },
+    {
+      name: 'blublood-staging',
+      testDir: './specs',
+      testMatch: ['vitality/native/**/*.spec.ts', 'vitality/capetown/**/*.spec.ts'],
+      metadata: { tenant: 'blublood', env: 'staging' },
+    },
   ],
 });
