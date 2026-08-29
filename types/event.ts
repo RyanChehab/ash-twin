@@ -42,5 +42,5 @@ export interface EventCriteria {
   hasAddons?:   AddonCriteria;   // event MUST have an addon matching this shape
   hasNoAddons?: AddonCriteria;   // event MUST NOT have any addon matching this shape
 
-  hasHandling?: PaymentKey;
+  hasHandling?: PaymentKey | PaymentKey[];
 }
