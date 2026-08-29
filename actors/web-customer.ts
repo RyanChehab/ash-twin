@@ -37,13 +37,8 @@ export class WebCustomer {
     this.pages = webPages(page, tenant);
   }
 
-  /**
-   * Navigate to an event's buy page. Handles all three event shapes:
-   *   - unique → direct navigation to /{type}/{id}, arrives on buy page
-   *   - sub    → navigate via the main's URL, then pick THIS sub in the date picker
-   *   - main   → navigate to /{type}/{id}, date picker shown; auto-pick next
-   *              upcoming sub (fallback for tests that pass a main by mistake)
-   */
+// navigate to event page
+
   async openEvent(event: Event): Promise<void> {
     if (event.rep === 'sub' && event.mainId != null) {
       await this.pages.event.open({ id: event.mainId, type: event.type });
@@ -59,18 +54,11 @@ export class WebCustomer {
     }
   }
 
-  /** Convenience for callers that only have the id — resolves then delegates. */
   async openEventById(id: number): Promise<void> {
     const event = await this.resolver.event(id);
     await this.openEvent(event);
   }
 
-  /**
-   * Pay for the current checkout using the strategy registered for `paymentKey`.
-   * Two guards fire before any DOM interaction:
-   *   1. paymentKey must be rendered on the checkout preview
-   *   2. a strategy must be registered for it in payments/index.ts
-   */
   async payWith(
     paymentKey: string,
     testCard?:  TestCard,
