@@ -10,17 +10,17 @@
 <style>
 :root {
   --blue: #1D3FBE;
-  --blue-bright: #4D6FEE;
-  --blue-soft: #8FA4F5;
+  --blue-bright: #2E4FD8;
+  --blue-soft: #4667E2;
   --pink: #C44678;
-  --salmon: #F09683;
-  --green: #8DC7A5;
-  --ink: #070B1D;
-  --ink-2: #0B1130;
-  --panel: #0E1538;
-  --line: rgba(143, 164, 245, 0.14);
-  --text: #E9ECFB;
-  --muted: #9AA3C7;
+  --salmon: #E37A5F;
+  --green: #6BAF89;
+  --ink: #EEF2FB;
+  --ink-2: #E3E9F7;
+  --panel: #FFFFFF;
+  --line: rgba(29, 63, 190, 0.14);
+  --text: #0B1230;
+  --muted: #566089;
   --mono: "JetBrains Mono", monospace;
   --display: "Comfortaa", sans-serif;
   --body: "Urbanist", sans-serif;
@@ -41,19 +41,12 @@ html, body {
   content: "";
   position: absolute; inset: 0;
   background:
-    radial-gradient(900px 600px at 12% -10%, rgba(29,63,190,0.42), transparent 60%),
-    radial-gradient(700px 500px at 105% 15%, rgba(196,70,120,0.16), transparent 60%),
-    radial-gradient(800px 600px at 50% 115%, rgba(141,199,165,0.10), transparent 60%),
-    linear-gradient(180deg, var(--ink-2), var(--ink) 55%);
+    radial-gradient(700px 500px at 8% 92%, rgba(196,70,120,0.06), transparent 65%),
+    radial-gradient(900px 700px at 25% 25%, rgba(29,63,190,0.06), transparent 65%),
+    linear-gradient(160deg, #BDC9E0 0%, #AAB8D3 55%, #95A4C0 100%);
 }
-.stage-bg svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.5; }
-.stage-bg::after {
-  content: "";
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-}
+.stage-bg svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.35; }
+.stage-bg::after { display: none; }
 
 .hud {
   position: fixed; z-index: 50; left: 0; right: 0; bottom: 0;
@@ -84,7 +77,7 @@ html, body {
 .slide {
   position: fixed; inset: 0; z-index: 10;
   display: flex; align-items: center; justify-content: center;
-  padding: 64px 84px 84px;
+  padding: 56px 56px 76px;
   opacity: 0; visibility: hidden;
   transform: translateY(26px) scale(.985);
   transition: opacity .55s cubic-bezier(.6,.05,.2,1), transform .55s cubic-bezier(.6,.05,.2,1), visibility 0s linear .55s;
@@ -94,7 +87,7 @@ html, body {
   transform: translateY(0) scale(1);
   transition: opacity .55s cubic-bezier(.6,.05,.2,1), transform .55s cubic-bezier(.6,.05,.2,1), visibility 0s;
 }
-.slide .inner { width: min(1180px, 100%); }
+.slide .inner { width: min(1340px, 100%); }
 
 .slide [data-r] { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
 .slide.active [data-r] { opacity: 1; transform: translateY(0); }
@@ -167,33 +160,35 @@ h2 { font-size: clamp(30px, 4vw, 50px); line-height: 1.1; margin-bottom: 14px; }
 }
 .brand-mark img {
   display: block;
-  height: 104px; width: auto;
-  filter: drop-shadow(0 10px 24px rgba(29,63,190,0.40)) drop-shadow(0 0 24px rgba(196,70,120,0.25));
+  height: 124px; width: auto;
 }
 @media (max-width: 980px) {
   .brand-mark { top: 16px; right: 18px; }
-  .brand-mark img { height: 75px; }
+  .brand-mark img { height: 89px; }
 }
 .title-cmd {
   display: inline-flex; align-items: center; gap: 14px;
   margin-top: 40px; padding: 14px 26px;
   font-family: var(--mono); font-size: 19px;
-  border: 1px solid var(--line); border-radius: 12px;
-  background: rgba(14,21,56,0.65);
-  box-shadow: 0 0 40px rgba(29,63,190,0.25);
+  color: #C7CEF0;
+  border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+  background: linear-gradient(180deg, #0D1334, #090E26);
+  box-shadow: 0 18px 40px rgba(11,18,48,0.28);
 }
 
 .pain-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 18px; margin-top: 38px;
 }
 .pain-cell {
   padding: 22px 20px; border-radius: 14px;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(14,21,56,0.75), rgba(11,17,48,0.5));
-  transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .35s;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, #0D1334, #090E26);
+  box-shadow: 0 18px 40px rgba(11,18,48,0.28);
+  transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .35s, box-shadow .35s;
 }
-.pain-cell:hover { transform: translateY(-4px); border-color: rgba(240,150,131,0.5); }
+.pain-cell:hover { transform: translateY(-4px); border-color: rgba(196,70,120,0.35); box-shadow: 0 22px 46px rgba(11,18,48,0.36); }
+.pain-cell span { color: #9AA3C7; }
 .pain-cell b {
   font-family: var(--display); font-weight: 700;
   font-size: clamp(38px, 4.2vw, 58px); line-height: 1;
@@ -214,10 +209,11 @@ h2 { font-size: clamp(30px, 4vw, 50px); line-height: 1.1; margin-bottom: 14px; }
 .tenant-chip {
   font-family: var(--mono); font-size: 13px;
   padding: 9px 15px; border-radius: 999px;
-  border: 1px solid var(--line); color: var(--text);
-  background: rgba(14,21,56,0.55);
+  border: 1px solid rgba(255,255,255,0.06); color: #E9ECFB;
+  background: linear-gradient(180deg, #0D1334, #090E26);
+  box-shadow: 0 12px 26px rgba(11,18,48,0.22);
 }
-.tenant-chip em { font-style: normal; color: var(--muted); margin-left: 8px; font-size: 12px; }
+.tenant-chip em { font-style: normal; color: #9AA3C7; margin-left: 8px; font-size: 12px; }
 
 .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 38px; }
 .fact { border-left: 2px solid var(--blue-bright); padding: 6px 0 6px 20px; }
@@ -228,15 +224,16 @@ h2 { font-size: clamp(30px, 4vw, 50px); line-height: 1.1; margin-bottom: 14px; }
 
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 36px; }
 .card {
-  background: linear-gradient(180deg, rgba(14,21,56,0.85), rgba(11,17,48,0.6));
-  border: 1px solid var(--line); border-radius: 16px;
-  padding: 24px 22px;
+  background: linear-gradient(180deg, #0D1334, #090E26);
+  border: 1px solid rgba(255,255,255,0.06); border-radius: 16px;
+  padding: 24px 22px; color: #E9ECFB;
+  box-shadow: 0 18px 40px rgba(11,18,48,0.28);
   transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .35s, box-shadow .35s;
 }
-.card:hover { transform: translateY(-5px); border-color: rgba(240,150,131,0.5); box-shadow: 0 18px 50px rgba(0,0,0,0.4); }
+.card:hover { transform: translateY(-5px); border-color: rgba(196,70,120,0.35); box-shadow: 0 22px 50px rgba(11,18,48,0.38); }
 .card .ico { font-size: 22px; margin-bottom: 14px; display: block; }
-.card h3 { font-family: var(--display); font-size: 17px; font-weight: 600; margin-bottom: 8px; }
-.card p { font-size: 14px; color: var(--muted); line-height: 1.55; }
+.card h3 { font-family: var(--display); font-size: 17px; font-weight: 600; margin-bottom: 8px; color: #E9ECFB; }
+.card p { font-size: 14px; color: #9AA3C7; line-height: 1.55; }
 .card code { font-family: var(--mono); font-size: 12px; color: var(--salmon); }
 
 .stack-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 32px; margin-top: 32px; }
@@ -246,7 +243,8 @@ h2 { font-size: clamp(30px, 4vw, 50px); line-height: 1.1; margin-bottom: 14px; }
   border: 1px solid transparent;
   transition: all .3s;
 }
-.stack-row:hover { border-color: var(--line); background: rgba(14,21,56,0.6); }
+.stack-row:hover { border-color: rgba(255,255,255,0.06); background: linear-gradient(180deg, #0D1334, #090E26); color: #E9ECFB; box-shadow: 0 12px 26px rgba(11,18,48,0.22); }
+.stack-row:hover span { color: #9AA3C7; }
 .stack-row code {
   font-family: var(--mono); font-size: 15px; font-weight: 600;
   color: var(--salmon); white-space: nowrap;
@@ -272,13 +270,13 @@ h2 { font-size: clamp(30px, 4vw, 50px); line-height: 1.1; margin-bottom: 14px; }
 
 <div class="stage-bg">
   <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1440 900">
-    <g fill="none" stroke="rgba(143,164,245,0.06)" stroke-width="2">
+    <g fill="none" stroke="rgba(29,63,190,0.10)" stroke-width="2">
       <path d="M-40 120 H 240 V 320 H 460 V 180 H 700"/>
       <path d="M1480 760 H 1180 V 560 H 980 V 700 H 760"/>
       <path d="M120 940 V 700 H 320 V 520"/>
       <path d="M1360 -40 V 200 H 1160 V 380"/>
     </g>
-    <g fill="none" stroke="rgba(240,150,131,0.10)" stroke-width="2">
+    <g fill="none" stroke="rgba(196,70,120,0.12)" stroke-width="2">
       <path d="M-40 480 H 140 V 620 H 300"/>
       <path d="M1480 320 H 1320 V 460"/>
     </g>
@@ -308,8 +306,7 @@ h2 { font-size: clamp(30px, 4vw, 50px); line-height: 1.1; margin-bottom: 14px; }
     <div class="pain-grid" data-r="4">
       <div class="pain-cell"><b>6</b><span>live sites</span></div>
       <div class="pain-cell"><b>4</b><span>web themes</span></div>
-      <div class="pain-cell"><b>N</b><span>payment gateways</span></div>
-      <div class="pain-cell"><b>1</b><span>QA on it all</span></div>
+      <div class="pain-cell"><b>1</b><span>QA on it</span></div>
     </div>
     <div class="tenant-strip" data-r="5">
       <span class="tenant-chip">cca <em>default</em></span>
