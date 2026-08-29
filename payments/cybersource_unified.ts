@@ -59,16 +59,10 @@ export const cybersource_unified: PaymentStrategy = {
     });
     await cardContinue.click();
 
-    // Second Continue (summary — identified by "Save my information" text)
     const summary = await pollFrames(page, 30_000, 'summary frame', async (frame) =>
       (await visible(frame.getByText(/save my (info|information)/i))) ? frame : null,
     );
-    const summaryContinue = summary.getByRole('button', { name: continueButton }).first();
-    await summaryContinue.waitFor({ state: 'visible', timeout: 10_000 });
-    for (let i = 0; i < 20 && !(await summaryContinue.isEnabled()); i++) {
-      await page.waitForTimeout(200);
-    }
-    await summaryContinue.click();
+    await summary.getByRole('button', { name: continueButton }).first().click({ timeout: 10_000 });
 
     // Poll for confirmation heading. If a 3DS challenge shows up, react to it.
     const heading = page.locator('h1.success, h1.pending, h1.fail');
@@ -130,7 +124,25 @@ async function pollFrames<T>(
     }
     await page.waitForTimeout(400);
   }
-  throw new Error(`cybersource_unified: no ${what} within ${timeoutMs}ms`);
+  throw new Error(`cybersource_unified: no ${what} within ${timeoutMs}ms\n${await describeFrames(page)}`);
+}
+
+async function describeFrames(page: Page): Promise<string> {
+  const lines: string[] = ['frames at timeout:'];
+  for (const frame of page.frames()) {
+    try {
+      const buttons   = await frame.getByRole('button').all();
+      const textboxes = await frame.getByRole('textbox').all();
+      const btnNames  = (await Promise.all(buttons.slice(0, 8).map(b => b.getAttribute('aria-label').then(a => a ?? b.textContent()).catch(() => null))))
+        .map(s => s?.trim()).filter(Boolean).join(' | ');
+      const tbNames   = (await Promise.all(textboxes.slice(0, 8).map(t => t.getAttribute('aria-label').then(a => a ?? t.getAttribute('name')).catch(() => null))))
+        .map(s => s?.trim()).filter(Boolean).join(' | ');
+      lines.push(`  ${frame.url() || '(main)'}\n    buttons:   [${btnNames}]\n    textboxes: [${tbNames}]`);
+    } catch {
+      lines.push(`  ${frame.url() || '(main)'}  (unreadable)`);
+    }
+  }
+  return lines.join('\n');
 }
 
 async function visible(loc: Locator): Promise<boolean> {
