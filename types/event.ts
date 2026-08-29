@@ -26,6 +26,7 @@ export interface EventCriteria {
   status?: 'pub' | 'unpub' | 'nosal' | 'trash';
   rep?:    EventRep | 'main-or-unique' | 'sub-or-unique';
   model?:  EventModel;
+  source?: 'local' | (string & {});
 
   // Visibility flags
   webshop?:            boolean;   // event_webshop = 1
