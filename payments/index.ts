@@ -1,5 +1,6 @@
 import type { PaymentStrategy } from '../types/payment';
 import { cybersource_unified } from './cybersource_unified';
+import { free } from './free';
 import { tabby } from './tabby';
 
 /**
@@ -8,6 +9,7 @@ import { tabby } from './tabby';
  */
 const strategies: PaymentStrategy[] = [
   cybersource_unified,
+  free,
   tabby,
 ];
 
