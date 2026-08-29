@@ -150,6 +150,97 @@ Raise per-test, not globally. Auth tests still fail loudly at 60s when something
 
 Renumbered ID reference: payment tests are 16 (visa no-3DS), 17 (visa 3DS complete), 18 (visa 3DS cancel), 21 (Tabby), and 19 (anonymous → auth redirect).
 
+## Conventions in practice
+
+These aren't framework-enforced. Every existing spec follows them — match the pattern when adding new tests so review stays about behaviour, not style.
+
+**Alias `customer.pages.{page}` at the top of the test.** Every spec pulls the page object into a local variable before using it, so the body reads cleanly:
+
+```ts
+test(N, 'vitality', async ({ customer }) => {
+  const auth = customer.pages.auth;
+  await auth.open();
+  await auth.fillLogin(creds);
+  // ...
+});
+```
+
+**"Valid minus one" for negative validation tests.** Each spec file defines a `validBase()` factory that returns a fully valid payload, and each negative test spreads it, overriding one field:
+
+```ts
+const validBase = (email?: string): RegisterData => ({ /* every field valid */ });
+
+test(1, 'vitality', async ({ customer }) => {
+  await auth.fillRegister({ ...validBase(), firstName: '' });
+  await auth.submitRegister();
+  expect(await auth.hasFieldError('user_firstname')).toBe(true);
+});
+```
+
+One failing field per test. If you find yourself blanking two fields, that's two tests.
+
+**The `feedback()` fixture.** Attaches a human-readable note to the report so the HTML dashboard shows what actually happened, not just green/red:
+
+```ts
+feedback(`user ${email} signed up`);
+feedback(`event ${event.id} category ${category.id}: paid order ${order.orderRef}`);
+```
+
+Use it once, after the last assertion. State the outcome (what got created and with what identifiers), not the steps.
+
+**Config-touching specs need a cache-invalidation `beforeAll`.** Any test that flips a `configuration` row through `db.overrideConfig` reads stale values until the memcache is cleared. Every purchase and payment spec starts with:
+
+```ts
+test.beforeAll(async ({ admin, db }) => {
+  await db.overrideConfig('disable_config_cache', '1');
+  await admin.clearCache();
+});
+```
+
+Boilerplate, but skip it and the test flakes intermittently.
+
+**Standard purchase setup.** Every purchase test resolves the same event/category shape:
+
+```ts
+const event    = await resolver.event({ ...events.normal, hasHandling: '<gateway key>' });
+const category = await resolver.category({
+  eventId:      event.id,
+  numbering:    'none',
+  webPublished: true,
+  soldout:      false,
+});
+```
+
+`events.normal` lives in `helpers/event-presets.ts` and means "regular published event, tickets on sale". Reach for a different preset only when the test specifically targets a soldout / hidden / out-of-window event.
+
+**`payment: 'any'` for tenant-agnostic purchases.** Use it in specs under `specs/vitality/native/` so the same spec runs against every tenant regardless of which gateway is configured:
+
+```ts
+const order = await customer.buyTicket(event, category, 1, { payment: 'any' });
+```
+
+`buyTicket` picks the first rendered handling that has a registered strategy. Under `specs/payments/` you name the gateway explicitly (`payment: { key: 'cybersource_unified', card: cards.visaSuccess }`).
+
+**`test.setTimeout(...)` on the first line of the body**, with a trailing comment explaining why:
+
+```ts
+test(16, 'vitality', async ({ customer, resolver, tenant, feedback }) => {
+  test.setTimeout(120_000);   // paid checkout goes through the gateway sandbox
+  // ...
+});
+```
+
+Keeps the raised timeout visible at a glance during review.
+
+**Section headers use Unicode box characters.** Long spec files group tests with dividers:
+
+```ts
+// ── Register form: per-field client-side validation ────────────────────────
+// ── Login form: validation, rejection, and success ────────────────────────
+```
+
+The `──` (U+2500) reads better in a terminal than `-----`. Match the existing style.
+
 ## Rules to write down
 
 - **Every test lives in `specs/registry.json`.** The wrapper enforces this at import time.
