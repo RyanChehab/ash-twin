@@ -19,8 +19,10 @@ A single "click submit and wait" strategy can't cover any of these honestly. So 
 ```
 payments/
 ├── types re-exported from ../types/payment.ts
-├── index.ts                     — registry + getPaymentStrategy(key)
-├── cybersource_unified.ts       — one file per gateway
+├── index.ts                     — registry + getPaymentStrategy(key) + registeredPaymentKeys()
+├── cybersource_unified.ts       — card + inline 3DS
+├── tabby.ts                     — BNPL redirect flow
+├── free.ts                      — zero-total no-op
 └── (future: ngenius.ts, checkoutframes.ts, ...)
 ```
 
@@ -29,6 +31,8 @@ payments/
 ```ts
 const strategies: PaymentStrategy[] = [
   cybersource_unified,
+  free,
+  tabby,
 ];
 ```
 
@@ -79,6 +83,8 @@ Two lifecycle hooks:
 
 `opts` is a gateway-specific dictionary. Each strategy interprets its own keys. `cybersource_unified` reads `opts.cancelChallenge` to abort a 3DS challenge instead of completing it — kept off the base interface so it doesn't balloon with every gateway's quirks.
 
+**Strategies own their sandbox defaults.** When `ctx.testCard` / `ctx.opts` are omitted, the strategy falls back to its own happy-path (cybersource defaults to `cards.visaSuccess`, tabby to `identities.success`, free needs nothing). This is what lets `payWithAny()` and `payWith(key)` work without the caller naming a card.
+
 ## Test cards live WITH the strategy
 
 Each gateway has its own sandbox card set (Checkout.com sandbox cards don't work on Cybersource). Colocate them:
@@ -126,6 +132,30 @@ Two guards:
 2. **Is a strategy registered for this key?** Throw with the exact fix message.
 
 Then pick the radio, run `prepare` (if defined), submit the form, run `complete`.
+
+## Gateway-agnostic — `WebCustomer.payWithAny`
+
+For native tests that must run across tenants with different payment configs, use `payWithAny()`:
+
+```ts
+async payWithAny(): Promise<void> {
+  const available  = await this.pages.checkout.readAvailableHandlings();
+  const registered = new Set(registeredPaymentKeys());
+  for (const h of available) {
+    if (registered.has(h.paymentKey)) return this.payWith(h.paymentKey);
+  }
+  throw new Error(`payWithAny: no rendered handling has a registered strategy. ...`);
+}
+```
+
+It scans rendered handlings, picks the first one with a registered strategy, and delegates through `payWith` (which then uses the strategy's happy-path defaults). Pair it with `hasHandling: registeredPaymentKeys()` on the event query so the resolver only returns events that render at least one gateway we can drive:
+
+```ts
+const event = await resolver.event({ ...events.normal, hasHandling: registeredPaymentKeys() });
+await customer.buyTicket(event, category, 1, { payment: 'any' });
+```
+
+The `payment: 'any'` shorthand on `BuyTicketOpts` is what `buyTicket` translates into a `payWithAny()` call.
 
 ## The DOM contract on the preview page
 

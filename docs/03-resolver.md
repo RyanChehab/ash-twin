@@ -94,6 +94,8 @@ If unsure whether a change affects presets: it does. Open `event-presets.ts` and
   - `requiresNationalId` — `event_nationalid`
   - `requiresLogin` — `event_requires_login`
   - `hasAddons` — has an eligible addon linked via `addonlink`
+- **Handling availability**
+  - `hasHandling` — `PaymentKey | PaymentKey[]` — event must render a checkout handling for the given payment (or ANY of the array). Mirrors squaremaze's server-side handling filter: tenant has the row, both `eph_*`/`esm_*` plugins enabled, `sale_mode` contains `'www'`, and the handling's shipment is compatible with the event's `event_shipments`.
 - **Nested**
   - `hasCategory` — a `CategoryCriteria` (becomes an EXISTS subquery)
 
@@ -105,6 +107,13 @@ If unsure whether a change affects presets: it does. Open `event-presets.ts` and
 - `minPrice` / `maxPrice` — range filter
 - `mode` — `'ticket' | 'pass'`
 - `webPublished` / `posPublished` / `b2bPublished` — `category_<channel> = 1`
+
+Payment specs typically combine `hasHandling` with a preset:
+
+```ts
+await resolver.event({ ...events.normal, hasHandling: 'cybersource_unified' });
+await resolver.event({ ...events.normal, hasHandling: registeredPaymentKeys() });  // any driveable gateway
+```
 
 Combine as many as you want:
 

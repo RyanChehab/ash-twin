@@ -73,6 +73,7 @@ customer.proceedFromProducts()     // advance past the interstitial (deliberatel
 // Checkout → payment
 customer.fillCheckout({ email, phone })
 customer.payWith(paymentKey, testCard?, opts?)   // strategy-driven, see 10-payments.md
+customer.payWithAny()                            // pick whichever rendered handling has a registered strategy
 customer.submitCheckout()          // low-level: just click submit; payWith orchestrates around it
 
 // Result
@@ -124,6 +125,21 @@ await customer.payWith('cybersource_unified', cards.visa3ds, { cancelChallenge: 
 ```
 
 The `opts` object is a per-gateway grab bag — each strategy interprets its own keys. Cybersource reads `cancelChallenge`; a future NGenius strategy might read something else entirely.
+
+## Gateway-agnostic payment via `payWithAny`
+
+For native tests that must pass across tenants with different payment configs, use `payWithAny()`. It reads the handlings rendered on the current checkout, picks the first one that has a registered strategy, and dispatches through `payWith`. Each strategy handles its own sandbox defaults when called without explicit card/opts, so the actor doesn't need to name a gateway.
+
+```ts
+// specs/vitality/native/purchase.spec.ts
+const event = await resolver.event({
+  ...events.normal,
+  hasHandling: registeredPaymentKeys(),   // event renders at least one gateway we can drive
+});
+await customer.buyTicket(event, category, 1, { payment: 'any' });
+```
+
+Fails loud when nothing rendered has a registered strategy — the message lists both the rendered set and the registered set, so the reader can decide whether it's a tenant-config issue or a coverage gap.
 
 ## Rules
 

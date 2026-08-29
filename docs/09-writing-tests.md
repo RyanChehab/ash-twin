@@ -119,7 +119,21 @@ test(11, 'vitality', async ({ customer, db }) => {
 });
 ```
 
-Every step is verified on both sides, and the `finally` cleans the row even if the test throws mid-body. Purchase tests should follow the same shape once we've added `db.orderById()` / `db.deleteOrderById()` — the confirmation page's `h1.success` can lie about the order's actual state.
+Every step is verified on both sides, and the `finally` cleans the row even if the test throws mid-body.
+
+Purchase tests follow the same shape via `db.orderById(orderRef)` — the confirmation page's `h1.success` can lie about the actual state (webhook races leave the DB `pending` while the heading is already green). A paid-and-committed order is `status='ord'` + `paymentStatus='paid'` (mirrors `Order::isOrdered()` in `model.order.php`):
+
+```ts
+const order   = await customer.buyTicket(event, category, 1, { payment: 'any' });
+expect(order.status).toBe('paid');                              // DOM: heading
+
+const dbOrder = await db.orderById(order.orderRef);
+expect(dbOrder, `order ${order.orderRef} not found in DB`).not.toBeNull();
+expect(dbOrder?.paymentStatus).toBe('paid');                    // DB: not stuck at 'pending'
+expect(dbOrder?.status).toBe('ord');                            // DB: committed, not 'res'
+```
+
+`db.deleteOrderById()` doesn't exist yet — paid orders are the desired state, so purchase tests don't clean up. Cancelled/failed test orders can be tidied by an offline job if they pile up.
 
 ## Long-running tests raise their own timeout
 

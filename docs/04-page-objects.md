@@ -109,8 +109,11 @@ async readAvailableHandlings(): Promise<RenderedHandling[]>
 
 async pickHandlingByPayment(paymentKey: string): Promise<Locator>
 // Clicks the label wrapping the matching radio (radios are visually
-// hidden on CCA — the label handles the toggle) and returns the <label>
+// hidden — the label handles the toggle) and returns the <label>
 // Locator so payment strategies can scope their own selectors to it.
+// Works on both themes: default and capetown both emit
+// data-payment-type on the handling radio (capetown's cart_content.tpl
+// was updated to match).
 ```
 
 `RenderedHandling` is defined inline in `checkout.ts` and NOT in `types/` — only the checkout page produces it, only the actor consumes it. See [10-payments.md](./10-payments.md) for how strategies build on top.
