@@ -1,6 +1,12 @@
 import mysql, { Pool, RowDataPacket } from 'mysql2/promise';
 import type { TenantDb } from '../types/tenant';
-import type { OrderPaymentStatus, OrderRow, OrderStatus } from '../types/order';
+import type {
+  CreditOrderRow,
+  OrderPaymentStatus,
+  OrderRow,
+  OrderStatus,
+  OrderTicketsInfo,
+} from '../types/order';
 
 /**
  * Thin wrapper around a mysql2 connection pool for one tenant's DB.
@@ -92,7 +98,7 @@ export class DbClient {
     return `/activation.php?uar=${encodeURIComponent(token)}`;
   }
 
-  /** True once activation cleared auth.active (NULL) and user.user_active flipped to 1. */
+  // True once activation cleared auth.active (NULL) and user.user_active flipped to 1.
   async isUserActive(email: string): Promise<boolean> {
     // Same race window as activationUrlFor — retry until the activation write
     // (user.user_active = 1 AND auth.active = NULL) is visible.
@@ -112,11 +118,6 @@ export class DbClient {
 
   // ── orders: DB-side verification for purchase specs ────────────────────
 
-  /**
-   * Fetch an order's DB state by its numeric ref (as displayed on
-   * `checkout_result.tpl`). Returns `null` when the ref isn't numeric or the
-   * row doesn't exist. Committed-paid = `status='ord'` + `paymentStatus='paid'`.
-   */
   async orderById(orderRef: string | number): Promise<OrderRow | null> {
     const id = Number(orderRef);
     if (!Number.isFinite(id) || id <= 0) return null;
@@ -131,6 +132,45 @@ export class DbClient {
     return row
       ? { orderId: row.order_id, status: row.order_status, paymentStatus: row.order_payment_status }
       : null;
+  }
+
+  async orderTicketsInfo(orderId: number): Promise<OrderTicketsInfo | null> {
+    const row = await this.one<{
+      order_tickets_nr:     number;
+      order_old_tickets_nr: number;
+    }>(
+      'SELECT order_tickets_nr, order_old_tickets_nr FROM `order` WHERE order_id = ? LIMIT 1',
+      [orderId],
+    );
+    return row
+      ? { ticketsNr: row.order_tickets_nr, oldTicketsNr: row.order_old_tickets_nr }
+      : null;
+  }
+
+  async creditOrdersFor(originalOrderId: number): Promise<CreditOrderRow[]> {
+    const rows = await this.query<{
+      order_id:             number;
+      order_original_id:    number;
+      order_status:         OrderStatus;
+      order_payment_status: OrderPaymentStatus;
+      order_total_price:    number;
+      order_response:       string | null;
+    }>(
+      `SELECT order_id, order_original_id, order_status, order_payment_status,
+              order_total_price, order_response
+       FROM \`order\`
+       WHERE order_original_id = ? AND order_status = 'credit'
+       ORDER BY order_id ASC`,
+      [originalOrderId],
+    );
+    return rows.map(r => ({
+      orderId:       r.order_id,
+      originalId:    r.order_original_id,
+      status:        r.order_status,
+      paymentStatus: r.order_payment_status,
+      totalPrice:    Number(r.order_total_price),
+      response:      r.order_response,
+    }));
   }
 
   /** Remove the test-created user + its auth row. Safe to call even if the user was never created. */

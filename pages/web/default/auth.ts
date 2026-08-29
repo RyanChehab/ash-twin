@@ -210,7 +210,7 @@ export class DefaultAuthPage extends BasePage {
     const previousUrl = this.page.url();
     await this.loginSubmit.click();
     await Promise.race([
-      this.page.waitForURL(u => u.href !== previousUrl, { timeout: WAIT.MEDIUM }),
+      this.page.waitForURL(u => u.href !== previousUrl, { timeout: WAIT.MEDIUM, waitUntil: 'domcontentloaded' }),
       this.page.locator('#signin-form2 .error').first().waitFor({ state: 'visible', timeout: WAIT.MEDIUM }),
     ]);
   }
