@@ -74,6 +74,34 @@ export class DbClient {
     );
   }
 
+  // ── row-field toggles for visibility gating tests ───────────────────────
+
+  async setEventField(eventId: number, field: string, value: unknown): Promise<unknown> {
+    const row = await this.one<Record<string, unknown>>(
+      `SELECT \`${field}\` AS v FROM event WHERE event_id = ?`,
+      [eventId],
+    );
+    const previous = row?.v ?? null;
+    await this.execute(
+      `UPDATE event SET \`${field}\` = ? WHERE event_id = ?`,
+      [value, eventId],
+    );
+    return previous;
+  }
+
+  async setCategoryField(categoryId: number, field: string, value: unknown): Promise<unknown> {
+    const row = await this.one<Record<string, unknown>>(
+      `SELECT \`${field}\` AS v FROM category WHERE category_id = ?`,
+      [categoryId],
+    );
+    const previous = row?.v ?? null;
+    await this.execute(
+      `UPDATE category SET \`${field}\` = ? WHERE category_id = ?`,
+      [value, categoryId],
+    );
+    return previous;
+  }
+
   // ── user + auth: for the signup vitality test ───────────────────────────
 
 
