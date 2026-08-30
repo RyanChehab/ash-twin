@@ -6,7 +6,7 @@ export class DefaultCheckoutProductsPage extends BasePage {
   readonly checkoutButton: Locator = this.page.locator('#btns #checkoutBtn');
 
   async isCurrent(): Promise<boolean> {
-    return await this.checkoutButton.isVisible();
+    return await this.page.locator('body.checkout-products').first().isVisible();
   }
 
   async continue(): Promise<void> {

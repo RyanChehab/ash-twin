@@ -95,21 +95,17 @@ export class CapetownEventPage extends BasePage {
     }
   }
 
-  /**
-   * Check any required event-level agreement boxes (T&C, age restrictions).
-   * Both are gated by `event_terms` / `event_age_restrictions` on the event —
-   * hidden entirely when unset, so this method is a no-op for those events.
-   *
-   * The inputs themselves are visually hidden (styled radios/checkboxes); the
-   * wrapping <label> is the human click target, so we click the label to get
-   * real actionability instead of forcing a click through Playwright's checks.
-   */
+// Check any required event-level agreement boxes (T&C, age restrictions).
   async acceptTerms(): Promise<void> {
     for (const name of ['event_terms', 'event_age_restrictions'] as const) {
-      const input = this.page.locator(`#terms input[name="${name}"]`);
+      const input = this.page.locator(`#terms-modal-content input[name="${name}"]`);
       if ((await input.count()) === 0) continue;
-      if (await input.isChecked()) continue;
-      await this.page.locator(`#terms label:has(input[name="${name}"])`).click();
+      if (await input.evaluate((el) => (el as HTMLInputElement).checked)) continue;
+      await input.evaluate((el) => {
+        const cb = el as HTMLInputElement;
+        cb.checked = true;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
+      });
     }
   }
 
