@@ -26,9 +26,13 @@ export interface Category {
   isSeated?: boolean;               // derived: numbering !== 'none'
   mode?: CategoryMode;
 
+  min?: number;                    
+  max?: number;                    
+  multipleOf?: number;              
+
   webStatus?: CategoryPubStatus;
   posStatus?: CategoryPubStatus;
-  b2bStatus?: CategoryPubStatus;
+  b2bStatus?: CategoryPubStatus;    // plugin.b2bapi only — see docstring above
 
   data?: Record<string, unknown>;
 }

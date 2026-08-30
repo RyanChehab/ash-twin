@@ -382,11 +382,14 @@ export class Resolver {
         c.category_price     AS price,
         c.category_size      AS size,
         c.category_free      AS free,
-        c.category_numbering AS numbering,
-        c.category_mode      AS mode,
-        c.category_web       AS webStatus,
-        c.category_pos       AS posStatus,
-        c.category_b2b       AS b2bStatus
+        c.category_numbering   AS numbering,
+        c.category_mode        AS mode,
+        c.category_min         AS min,
+        c.category_max         AS max,
+        c.category_multiple_of AS multipleOf,
+        c.category_web         AS webStatus,
+        c.category_pos         AS posStatus,
+        c.category_b2b         AS b2bStatus
       FROM category c
       WHERE ${where}
       ORDER BY c.category_id DESC
