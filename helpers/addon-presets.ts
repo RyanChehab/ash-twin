@@ -9,14 +9,36 @@ import type { AddonCriteria } from '../types/addon';
 
 export const addons = {
 
+  // Addons render on the checkout interstitial via helper.addon.php's query,
+  // which filters on event_status, event_webshop, category_web, addonlink.
+  // event_show_on_checkout is a product-only flag — do NOT include it here.
   eligible: {
-    status:         'pub',
-    webshop:        true,
-    showOnCheckout: true,
+    status:  'pub',
+    webshop: true,
     hasCategory: {
       webPublished: true,
       soldout:      false,
     },
+  } satisfies AddonCriteria,
+
+  singleCategoryEligible: {
+    status:                'pub',
+    webshop:               true,
+    hasCategory: {
+      webPublished: true,
+      soldout:      false,
+    },
+    hasMultipleCategories: false,
+  } satisfies AddonCriteria,
+
+  multiCategoryEligible: {
+    status:                'pub',
+    webshop:               true,
+    hasCategory: {
+      webPublished: true,
+      soldout:      false,
+    },
+    hasMultipleCategories: true,
   } satisfies AddonCriteria,
 
 } as const;

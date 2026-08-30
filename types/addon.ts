@@ -36,4 +36,5 @@ export interface AddonCriteria {
 
   // Nested — filter by the addon's linked category shape
   hasCategory?:    CategoryCriteria;
+  hasMultipleCategories?: boolean;
 }

@@ -296,6 +296,23 @@ export class Resolver {
       params.push(...catParams);
     }
 
+    // Multi-category picker toggle — mirrors buildAddonCriteriaWhere. `ac2`
+    // alias avoids collision with `ac` used by hasCategory above.
+    if (cond.hasMultipleCategories === true) {
+      clauses.push(`(
+        SELECT COUNT(*) FROM category ac2
+        WHERE ac2.category_event_id = ae.event_id
+          AND ac2.category_web = 1
+      ) > 1`);
+    }
+    if (cond.hasMultipleCategories === false) {
+      clauses.push(`(
+        SELECT COUNT(*) FROM category ac2
+        WHERE ac2.category_event_id = ae.event_id
+          AND ac2.category_web = 1
+      ) = 1`);
+    }
+
     return {
       sql: `
         SELECT 1
@@ -516,6 +533,23 @@ export class Resolver {
         WHERE ac.category_event_id = e.event_id${tail}
       )`);
       params.push(...catParams);
+    }
+
+    // Multi-category picker toggle — mirrors helper.addon.php web-channel count
+    // (category_web = 1, sold-out categories still counted).
+    if (c.hasMultipleCategories === true) {
+      parts.push(`(
+        SELECT COUNT(*) FROM category ac
+        WHERE ac.category_event_id = e.event_id
+          AND ac.category_web = 1
+      ) > 1`);
+    }
+    if (c.hasMultipleCategories === false) {
+      parts.push(`(
+        SELECT COUNT(*) FROM category ac
+        WHERE ac.category_event_id = e.event_id
+          AND ac.category_web = 1
+      ) = 1`);
     }
 
     return { where: parts.join(' AND '), params };
