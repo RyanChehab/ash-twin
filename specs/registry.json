@@ -24,5 +24,9 @@
   { "id": 23, "title": "an authenticated user buys 3 GA tickets and admin fully refunds them" },
   { "id": 24, "title": "an authenticated user buys 3 GA tickets and admin partially refunds one" },
   { "id": 25, "title": "logout ends the session" },
-  { "id": 26, "title": "logout empties the cart" }
+  { "id": 26, "title": "logout empties the cart" },
+  { "id": 27, "title": "addon is hidden on the addons page when available online is off" },
+  { "id": 28, "title": "addon is hidden on the addons page when addon is unpub" },
+  { "id": 29, "title": "addon is hidden on the addons page when all of its categories are web-unpublished" },
+  { "id": 30, "title": "no addon pickers render when the cart's event has no eligible addons" }
 ]
