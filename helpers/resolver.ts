@@ -1,8 +1,8 @@
 import type { DbClient } from './db-client';
 import type { Event, EventCriteria, EventRep } from '../types/event';
 import type { Category, CategoryCriteria } from '../types/category';
-import type { AddonCriteria } from '../types/addon';
-import type { EventSelector, CategorySelector } from '../types/selectors';
+import type { Addon, AddonCriteria } from '../types/addon';
+import type { EventSelector, CategorySelector, AddonSelector } from '../types/selectors';
 
 // ── DB ↔ domain rep value mapping ──────────────────────────────────────────
 // SquareMaze stores 'main,sub' for standalone (unique) events. We alias to
@@ -396,5 +396,128 @@ export class Resolver {
       LIMIT 1
     `;
     return await this.db.one<Category>(sql, params);
+  }
+
+  // ── Addons ──────────────────────────────────────────────────────────────
+  
+  async addon(selector: AddonSelector): Promise<Addon> {
+    let row: Addon | null;
+
+    if (typeof selector === 'number') {
+      row = await this.queryAddon('e.event_id = ?', [selector]);
+    } else if (typeof selector === 'object' && 'id' in selector && 'name' in selector) {
+      row = await this.queryAddon('e.event_id = ?', [selector.id]);
+    } else if (typeof selector === 'object') {
+      const { where, params } = this.buildAddonCriteriaWhere(selector as AddonCriteria);
+      row = await this.queryAddon(where || '1=1', params);
+    } else {
+      throw new Error(`Unrecognized addon selector: ${JSON.stringify(selector)}`);
+    }
+
+    if (!row) throw new Error(`Addon not found: ${JSON.stringify(selector)}`);
+    return this.hydrateAddonRow(row);
+  }
+
+  private async queryAddon(where: string, params: unknown[]): Promise<Addon | null> {
+    const sql = `
+      SELECT
+        e.event_id               AS id,
+        e.event_name             AS name,
+        e.event_status           AS status,
+        e.event_webshop          AS webshop,
+        e.event_show_on_checkout AS showOnCheckout,
+        e.event_stock_shared     AS stockShared,
+        e.event_current_price    AS price,
+        e.event_order_limit      AS orderLimit,
+        e.event_origin_id        AS originId
+      FROM event e
+      WHERE e.event_model = 'product'
+        AND e.event_addon = 1
+        AND (${where})
+      ORDER BY e.event_id DESC
+      LIMIT 1
+    `;
+    return await this.db.one<Addon>(sql, params);
+  }
+
+  private hydrateAddonRow(row: Addon): Addon {
+    return {
+      ...row,
+      webshop:        !!row.webshop,
+      showOnCheckout: !!row.showOnCheckout,
+      stockShared:    !!row.stockShared,
+    };
+  }
+
+  /**
+   * Standalone `AddonCriteria` → WHERE clause. `addonId` is identity on the
+   * addon row itself; `eventId` / `categoryId` scope by `addonlink` rows;
+   * `hasCategory` is an EXISTS subquery on `category`.
+   */
+  private buildAddonCriteriaWhere(c: AddonCriteria): { where: string; params: unknown[] } {
+    const parts: string[] = [];
+    const params: unknown[] = [];
+
+    if (c.addonId !== undefined) {
+      parts.push('e.event_id = ?');
+      params.push(c.addonId);
+    }
+
+    if (c.status) {
+      parts.push('e.event_status = ?');
+      params.push(c.status);
+    }
+    if (c.webshop === true)  parts.push('e.event_webshop = 1');
+    if (c.webshop === false) parts.push('e.event_webshop = 0');
+
+    if (c.showOnCheckout === true)  parts.push('e.event_show_on_checkout = 1');
+    if (c.showOnCheckout === false) parts.push('e.event_show_on_checkout = 0');
+
+    if (c.stockShared === true)  parts.push('e.event_stock_shared = 1');
+    if (c.stockShared === false) parts.push('e.event_stock_shared = 0');
+
+    if (c.minPrice !== undefined) {
+      parts.push('e.event_current_price >= ?');
+      params.push(c.minPrice);
+    }
+    if (c.maxPrice !== undefined) {
+      parts.push('e.event_current_price <= ?');
+      params.push(c.maxPrice);
+    }
+    if (c.orderLimit !== undefined) {
+      parts.push('e.event_order_limit = ?');
+      params.push(c.orderLimit);
+    }
+
+    // Link-table filters (addonlink)
+    if (c.eventId !== undefined) {
+      parts.push(`EXISTS (
+        SELECT 1 FROM addonlink al
+        WHERE al.addonlink_addon_id = e.event_id
+          AND al.addonlink_event_id = ?
+      )`);
+      params.push(c.eventId);
+    }
+    if (c.categoryId !== undefined) {
+      parts.push(`EXISTS (
+        SELECT 1 FROM addonlink al
+        WHERE al.addonlink_addon_id = e.event_id
+          AND al.addonlink_category_id = ?
+      )`);
+      params.push(c.categoryId);
+    }
+
+    // Nested category shape — filter to addons whose own category matches
+    if (c.hasCategory) {
+      const { where, params: catParams } = this.buildCategoryCriteriaWhere(c.hasCategory, 'ac');
+      const tail = where ? ' AND ' + where : '';
+      parts.push(`EXISTS (
+        SELECT 1 FROM category ac
+        WHERE ac.category_event_id = e.event_id${tail}
+      )`);
+      params.push(...catParams);
+    }
+
+    return { where: parts.join(' AND '), params };
   }
 }
