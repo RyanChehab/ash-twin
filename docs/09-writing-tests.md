@@ -211,7 +211,7 @@ const category = await resolver.category({
 });
 ```
 
-`events.normal` lives in `helpers/event-presets.ts` and means "regular published event, tickets on sale". Reach for a different preset only when the test specifically targets a soldout / hidden / out-of-window event.
+`events.normal` lives in `helpers/presets/event.ts` and means "regular published event, tickets on sale". Reach for a different preset only when the test specifically targets a soldout / hidden / out-of-window event.
 
 **`payment: 'any'` for tenant-agnostic purchases.** Use it in specs under `specs/vitality/native/` so the same spec runs against every tenant regardless of which gateway is configured:
 

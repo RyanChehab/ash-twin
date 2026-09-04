@@ -1,7 +1,7 @@
 import { test, expect } from '../../../helpers/test';
 import type { RegisterData } from '../../../types/user';
 import { requireTestCustomer } from '../../../helpers/tenant';
-import { events } from '../../../helpers/event-presets';
+import { events } from '../../../helpers/presets/event';
 
 
 // Native auth vitality specs for default theme AND capetown theme

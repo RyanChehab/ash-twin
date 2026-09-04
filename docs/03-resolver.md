@@ -7,7 +7,7 @@
 Tests never write SQL. They describe WHAT they want via curated presets; the Resolver figures out WHICH row to fetch.
 
 ```ts
-import { events } from '../../helpers/event-presets';
+import { events } from '../../helpers/presets/event';
 
 const event = await resolver.event(events.normal);
 // → resolver runs a fully-explicit query built from the preset's criteria
@@ -23,7 +23,7 @@ Accepts:
 - `number` → by id
 - `string` → by name
 - `Event` ref → re-fetches by id
-- `EventCriteria` → any event matching the conditions (usually a preset from `event-presets.ts`)
+- `EventCriteria` → any event matching the conditions (usually a preset from `presets/event.ts`)
 
 ### `category(selector)`
 
@@ -38,10 +38,10 @@ Both return the full domain object (`Event` / `Category`), or **throw** if nothi
 
 The resolver applies **no** implicit filters. Every predicate comes from the criteria the caller passes. If a criterion field is unset, the resolver stays silent about that dimension.
 
-Because that would make every test verbose to write, curated `EventCriteria` combinations live in `helpers/event-presets.ts`. Tests reference presets by name:
+Because that would make every test verbose to write, curated `EventCriteria` combinations live in `helpers/presets/event.ts`. Tests reference presets by name:
 
 ```ts
-import { events } from '../../helpers/event-presets';
+import { events } from '../../helpers/presets/event';
 
 await resolver.event(events.normal);           // ordinary purchasable event
 await resolver.event(events.presale);          // presale-gated event
@@ -62,11 +62,11 @@ await resolver.event({
 });
 ```
 
-If the same variant appears in more than one test, promote it to a new preset in `event-presets.ts`.
+If the same variant appears in more than one test, promote it to a new preset in `presets/event.ts`.
 
 ## ⚠️ Maintenance rule
 
-**Whenever `EventCriteria` in `types/event.ts` gains, renames, or changes the semantics of a field, every affected preset in `helpers/event-presets.ts` must be updated in the same commit.**
+**Whenever `EventCriteria` in `types/event.ts` gains, renames, or changes the semantics of a field, every affected preset in `helpers/presets/event.ts` must be updated in the same commit.**
 
 Presets are the entire safety net — the resolver won't fall back to sensible defaults for you. A preset that silently omits a new criterion means every test using it starts including events that field was meant to filter. Rules of thumb:
 
@@ -74,7 +74,7 @@ Presets are the entire safety net — the resolver won't fall back to sensible d
 - **Renaming a field** → find-and-replace in every preset. TypeScript catches this at compile time thanks to `satisfies EventCriteria`.
 - **Changing semantics** (e.g. flipping what `true` means) → audit every preset by hand.
 
-If unsure whether a change affects presets: it does. Open `event-presets.ts` and check.
+If unsure whether a change affects presets: it does. Open `presets/event.ts` and check.
 
 ## Criteria dimensions supported
 
@@ -137,7 +137,7 @@ Each criteria key maps to one SQL fragment in a private builder method (`buildEv
    if (c.hasDiscount === true)  parts.push('EXISTS (SELECT 1 FROM discount d WHERE ...)');
    if (c.hasDiscount === false) parts.push('NOT EXISTS (...)');
    ```
-3. **Update every preset in `event-presets.ts`** that should have an opinion on the new dimension.
+3. **Update every preset in `presets/event.ts`** that should have an opinion on the new dimension.
 
 ## Cross-table conditions use EXISTS subqueries
 

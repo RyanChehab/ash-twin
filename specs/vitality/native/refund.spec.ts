@@ -1,5 +1,5 @@
 import { test, expect } from '../../../helpers/test';
-import { events } from '../../../helpers/event-presets';
+import { events } from '../../../helpers/presets/event';
 import { requireTestCustomer } from '../../../helpers/tenant';
 import { registeredPaymentKeys } from '../../../payments';
 

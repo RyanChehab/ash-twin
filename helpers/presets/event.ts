@@ -1,5 +1,5 @@
-import type { EventCriteria } from '../types/event';
-import type { AddonCriteria } from '../types/addon';
+import type { EventCriteria } from '../../types/event';
+import type { AddonCriteria } from '../../types/addon';
 
 /**
  * What "an eligible web-checkout addon" means — reused across every preset
