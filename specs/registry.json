@@ -28,5 +28,8 @@
   { "id": 27, "title": "addon is hidden on the addons page when available online is off" },
   { "id": 28, "title": "addon is hidden on the addons page when addon is unpub" },
   { "id": 29, "title": "addon is hidden on the addons page when all of its categories are web-unpublished" },
-  { "id": 30, "title": "no addon pickers render when the cart's event has no eligible addons" }
+  { "id": 30, "title": "no addon pickers render when the cart's event has no eligible addons" },
+  { "id": 31, "title": "addon renders sold-out when every category is out of stock" },
+  { "id": 32, "title": "addon category_min surfaces as data-min on the picker" },
+  { "id": 33, "title": "addon category_max surfaces as data-max on the picker" }
 ]

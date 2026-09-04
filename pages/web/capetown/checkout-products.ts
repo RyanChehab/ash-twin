@@ -49,4 +49,12 @@ export class CapetownCheckoutProductsPage extends BasePage {
     );
     return (await item.locator('.product-category-item-price').first().textContent())?.trim() ?? '';
   }
+  
+  async isAddonSoldOutByName(addonName: string): Promise<boolean> {
+    const item = this.page.locator('.product-category-item').filter({
+      has: this.page.locator('.product-category-item-title-text', { hasText: addonName }),
+    }).first();
+    if ((await item.count()) === 0) return false;
+    return await item.evaluate((el) => el.classList.contains('isSoldout'));
+  }
 }
