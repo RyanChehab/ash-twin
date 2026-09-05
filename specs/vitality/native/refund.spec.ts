@@ -22,8 +22,7 @@ test(23, 'vitality', async ({ customer, admin, resolver, tenant, db, feedback })
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   const order = await customer.buyTicket(event, category, 3, { payment: 'any' });
   expect(order.orderRef).toBeTruthy();
@@ -64,8 +63,7 @@ test(24, 'vitality', async ({ customer, admin, resolver, tenant, db, feedback })
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   const order = await customer.buyTicket(event, category, 3, { payment: 'any' });
   expect(order.orderRef).toBeTruthy();

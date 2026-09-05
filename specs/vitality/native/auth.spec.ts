@@ -202,8 +202,7 @@ test(26, "vitality", async ({ customer, resolver, tenant, feedback }) => {
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   // Seed the cart with one ticket.
   await customer.openEvent(event);

@@ -32,8 +32,7 @@ test.describe('addon visibility gates', () => {
     const { event, parentCat } = await proceedToAddonsPage(customer);
 
     await withAddon(db, event.id, { webshop: false }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -55,8 +54,7 @@ test.describe('addon visibility gates', () => {
     const { event, parentCat } = await proceedToAddonsPage(customer);
 
     await withAddon(db, event.id, { status: 'unpub' }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -80,8 +78,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ webPublished: false }, { webPublished: false }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -97,32 +94,9 @@ test.describe('addon visibility gates', () => {
   });
 
 
-  test(30, 'vitality', async ({ customer, tenant, db, feedback }) => {
-    test.setTimeout(120_000);
-    // Capetown's product_card_modal.tpl doesn't emit any sold-out marker on
-    // the card — cards render identically whether the addon is sold out or
-    // not (the state only surfaces when the modal opens). Deferring capetown
-    // coverage until we model that modal interaction.
-    test.skip(tenant.theme === 'capetown', "capetown doesn't surface sold-out on the card list");
-    const creds = requireTestCustomer(tenant);
-    const { event, parentCat } = await proceedToAddonsPage(customer);
-
-    await withAddon(db, event.id, { soldout: true }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
-      await customer.openEvent(event);
-      await customer.pages.event.pickCategory(parentCat.id);
-      await customer.pages.event.setQuantity(parentCat.id, 1);
-      await customer.pages.event.acceptTerms();
-      await customer.pages.event.addToCart(parentCat.id);
-      await customer.pages.event.proceedToCheckout();
-
-      expect(await customer.pages.checkoutProducts.isAddonSoldOut(addon.addonId, addon.name)).toBe(true);
-
-      feedback(`addon ${addon.addonId} rendered as sold-out`);
-      await customer.logout();
-    });
-  });
+  // Id 30 ("addon renders sold-out when every category is out of stock") lives
+  // in specs/vitality/default/addons.spec.ts — capetown's product_card_modal.tpl
+  // has no sold-out branch, so the assertion is default-only.
 
 
   test(31, 'vitality', async ({ customer, tenant, db, feedback }) => {
@@ -133,8 +107,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 3 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -160,8 +133,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ max: 5 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -178,19 +150,6 @@ test.describe('addon visibility gates', () => {
     });
   });
 
-
-  // ── Batch 3: min/max/multiple_of behavior (picker interaction) ────────
-  //
-  // These tests open the addon modal, click .inc N times, and assert the
-  // resulting qty. Mirrors what a real customer sees when they pick a
-  // constrained addon. Increment logic (from products.js:1560-1600):
-  //   - `increment = sets > 0 ? sets : 1`  (sets = multiple_of)
-  //   - First click from 0: `newVal = min > 0 ? max(min, increment) : increment`
-  //   - Later clicks: `newVal = currentVal + increment`
-  //   - If newVal > max (when max > 0) → block, keep current
-  //   - If newVal > limit → block
-
-
   test(33, 'vitality', async ({ customer, tenant, db, feedback }) => {
     test.setTimeout(120_000);
     const creds = requireTestCustomer(tenant);
@@ -199,8 +158,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 0, max: 0, multipleOf: 0 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -229,8 +187,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 5, max: 20 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -259,8 +216,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 0, max: 3 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -290,8 +246,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 0, max: 10, multipleOf: 2 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -320,8 +275,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 3, max: 20, multipleOf: 2 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);
@@ -331,7 +285,6 @@ test.describe('addon visibility gates', () => {
 
       const catId = addon.categoryIds[0];
       await customer.pages.checkoutProducts.openAddonModal(addon.addonId);
-      // First inc jumps to max(min=3, multipleOf=2) = 3. Second inc adds 2 → 5.
       await customer.pages.checkoutProducts.incAddon(addon.addonId, catId, 1);
       expect(await customer.pages.checkoutProducts.getAddonQty(addon.addonId, catId)).toBe(3);
       await customer.pages.checkoutProducts.incAddon(addon.addonId, catId, 1);
@@ -352,8 +305,7 @@ test.describe('addon visibility gates', () => {
     await withAddon(db, event.id, {
       categories: [{ min: 4, max: 4 }],
     }, async (addon) => {
-      await customer.pages.auth.open();
-      await customer.pages.auth.login(creds);
+      await customer.login(creds);
       await customer.openEvent(event);
       await customer.pages.event.pickCategory(parentCat.id);
       await customer.pages.event.setQuantity(parentCat.id, 1);

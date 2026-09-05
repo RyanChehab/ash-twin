@@ -23,8 +23,7 @@ test(16, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   const order = await customer.buyTicket(event, category, 1, {
     payment: { key: 'cybersource_unified', card: cards.visaSuccess },
@@ -53,8 +52,7 @@ test(17, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   const order = await customer.buyTicket(event, category, 1, {
     payment: { key: 'cybersource_unified', card: cards.visa3ds },
@@ -83,8 +81,7 @@ test(18, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   const order = await customer.buyTicket(event, category, 1, {
     payment: {
@@ -116,8 +113,7 @@ test(21, 'vitality', async ({ customer, resolver, tenant, db, feedback }) => {
     soldout:      false,
   });
 
-  await customer.pages.auth.open();
-  await customer.pages.auth.login(creds);
+  await customer.login(creds);
 
   const order = await customer.buyTicket(event, category, 1, {
     payment: {
@@ -162,7 +158,7 @@ test(19, 'vitality', async ({ customer, resolver, feedback }) => {
     await customer.pages.checkoutProducts.continue();
   }
 
-  expect(await customer.pages.auth.isOnPage()).toBe(true);
+  expect(await customer.isOnAuthPage()).toBe(true);
 
   feedback(`anonymous user landed on auth (${customer.page.url()})`);
 });
