@@ -1,4 +1,4 @@
-import mysql, { Pool, RowDataPacket } from 'mysql2/promise';
+import mysql, { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import type { TenantDb } from '../types/tenant';
 import type {
   CreditOrderRow,
@@ -42,6 +42,11 @@ export class DbClient {
   async execute(sql: string, params: unknown[] = []): Promise<void> {
 
     await this.pool.query(sql, params);
+  }
+
+  async insert(sql: string, params: unknown[] = []): Promise<number> {
+    const [result] = await this.pool.query<ResultSetHeader>(sql, params);
+    return result.insertId;
   }
 
   async close(): Promise<void> {
