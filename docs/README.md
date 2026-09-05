@@ -20,11 +20,13 @@ Granular documentation of the framework. Each file covers one concern; read in o
 ```
 ash-twin/
 ├── actors/           — business orchestrators (WebCustomer, Admin)
+├── factories/        — direct-DB fixture builders (addons, etc.)
 ├── helpers/          — Resolver, DbClient, tenant helpers, test wrapper
-├── pages/            — page objects (base + per-tenant)
+│   └── presets/      — curated criteria bundles (events, addons)
+├── pages/            — page objects (base + per-theme under pages/web/{theme}/)
 ├── payments/         — one strategy per gateway (cybersource_unified, ...)
 ├── fixtures/         — test dependency wiring
-├── tenants/          — per-tenant JSON config
+├── sites/            — per-tenant JSON config ({tenant}.{env}.json)
 ├── types/            — domain type definitions
 ├── specs/            — the actual tests
 └── docs/             — you are here

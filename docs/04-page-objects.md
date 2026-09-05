@@ -9,7 +9,7 @@ pages/web/
 ├── base.ts              — abstract BasePage + shared WAIT budgets
 ├── types.ts             — WebPages interface (the bundle contract)
 ├── factory.ts           — webPages(page, tenant) picks the right set
-├── cca/                 — default-theme pages (used by cca)
+├── default/             — default-theme pages (used by cca)
 │   ├── landing.ts
 │   ├── auth.ts
 │   ├── event.ts
@@ -17,11 +17,10 @@ pages/web/
 │   ├── checkout-products.ts   — the addons / shop-products interstitial
 │   ├── checkout.ts            — the checkout preview (handling radios, submit)
 │   └── confirmation.ts
-└── tenants/             — future per-tenant/theme overrides
-    ├── capetown/        — adrea, blublood
-    ├── antoine/         — Next.js
-    └── virgin/          — Next.js
+└── capetown/            — capetown-theme overrides (theagenda, adrea, blublood)
 ```
+
+Future themes (antoine's Next.js, virgin's Next.js) will land alongside `default/` and `capetown/`.
 
 ## The chassis — `BasePage`
 
@@ -135,6 +134,26 @@ async continue(): Promise<void> {
 ```
 
 Tests skip it explicitly through the actor: `if (await customer.isOnCheckoutProducts()) await customer.proceedFromProducts()`. Not folded into `proceedToCheckout` because future tests will interact with addons/products before advancing.
+
+### Cross-theme addon primitives
+
+Both themes render addons through `product_card_modal.tpl` (a `.product-card[data-product-id=X]` grid; the picker lives inside a fancybox-driven modal opened on card click). `default/` also supports the legacy inline `products_listing.tpl` layout as a fallback. `checkout-products.ts` exposes a shared contract every theme implements:
+
+```ts
+hasAddon(addonId, addonName): Promise<boolean>
+isAddonSoldOut(addonId, addonName): Promise<boolean>
+readAddonPickerAttr(addonId, categoryId, attr): Promise<string | null>
+openAddonModal(addonId): Promise<void>
+closeAddonModal(): Promise<void>
+getAddonQty(addonId, categoryId): Promise<number>
+incAddon(addonId, categoryId, times?): Promise<void>
+```
+
+Selectors target `.modal-quantity-picker.addon[data-addon-id][id]` (not the generic `.quantity-picker.addon`) so they don't collide with the invisible `#product-drawer` skeleton that `products.js` also populates.
+
+`openAddonModal` waits for jQuery's `click.modal` handler to be bound on `.inc` before returning. `products.js` binds the picker's increment handler inside fancybox's `afterShow` callback, which fires a fraction after Playwright's `waitFor({ state: 'visible' })` resolves — clicks would otherwise land on the button but fire no listener.
+
+Capetown's card list doesn't surface any sold-out marker (the state only appears inside the modal), so `isAddonSoldOut` skips on capetown; sold-out tests should `test.skip(tenant.theme === 'capetown', ...)`.
 
 ## Selector conventions
 

@@ -135,6 +135,29 @@ expect(dbOrder?.status).toBe('ord');                            // DB: committed
 
 `db.deleteOrderById()` doesn't exist yet — paid orders are the desired state, so purchase tests don't clean up. Cancelled/failed test orders can be tidied by an offline job if they pile up.
 
+## Factories — self-contained fixtures via direct DB insert
+
+Some tests need a specific fixture shape (e.g. an addon with `category_min=3, category_max=5, category_multiple_of=2`) that no tenant currently has seeded. Rather than depending on pre-existing rows, seed them inline via `factories/`.
+
+`factories/addon.ts` exposes `withAddon(db, parentEventId, opts, fn)`:
+
+```ts
+import { withAddon } from '../../../factories/addon';
+
+await withAddon(db, event.id, {
+  categories: [{ min: 3, max: 5, multipleOf: 2 }],
+}, async (addon) => {
+  // addon: { addonId, categoryIds, addonLinkId, name }
+  await customer.openEvent(event);
+  // ... drive the flow, assert, feedback ...
+});
+// addonlink + category + event rows deleted unconditionally on exit
+```
+
+The factory inserts directly into `event` (with `event_addon=1, event_model='product'`), `category`, and `addonlink` — bypassing squaremaze's PHP save hooks. That's fine for pure content addons; if a future test needs plugin side-effects on addon creation, escalate that specific case to an admin HTTP fixture.
+
+Cleanup is guaranteed via try/finally, matching the existing pattern for created users and `db.setEventField` overrides. Each test stays fully self-contained: create → drive → assert → delete.
+
 ## Long-running tests raise their own timeout
 
 The global per-test timeout is 60s (`playwright.config.ts` → `timeout: 60_000`); `actionTimeout` is 30s and `navigationTimeout` is 60s. Payment tests run through real sandbox gateways and need more:
