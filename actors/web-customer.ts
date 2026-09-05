@@ -5,6 +5,7 @@ import type { Category } from '../types/category';
 import type { Order } from '../types/order';
 import type { WebPages } from '../pages/web/types';
 import type { CheckoutUserInfo } from '../pages/web/default/checkout';
+import type { LoginCreds } from '../types/user';
 import type { TestCard } from '../payments';
 import { webPages } from '../pages/web/factory';
 import { Resolver } from '../helpers/resolver';
@@ -35,6 +36,19 @@ export class WebCustomer {
     readonly resolver: Resolver,
   ) {
     this.pages = webPages(page, tenant);
+  }
+
+  async login(creds: LoginCreds): Promise<void> {
+    await this.pages.auth.open();
+    await this.pages.auth.login(creds);
+  }
+
+  async isSignedIn(): Promise<boolean> {
+    return this.pages.auth.isSignedIn();
+  }
+
+  async isOnAuthPage(): Promise<boolean> {
+    return this.pages.auth.isOnPage();
   }
 
 // navigate to event page

@@ -264,6 +264,31 @@ Keeps the raised timeout visible at a glance during review.
 
 The `──` (U+2500) reads better in a terminal than `-----`. Match the existing style.
 
+## Spec files host tests, nothing else
+
+A spec file is a container for `test(id, ...)` bodies. It does **not** own logic. Every layer below the spec has its own home:
+
+| Concern | Home |
+|---|---|
+| Selectors, DOM waits, atomic gestures | `pages/web/{theme}/{page}.ts` |
+| Business orchestration (login → open event → buy) | `actors/{web-customer,admin}.ts` |
+| Fixture creation / teardown | `factories/{name}.ts` |
+| Curated criteria bundles for the resolver | `helpers/presets/{event,addon,...}.ts` |
+| Cross-spec DB probes | `helpers/db-client.ts` |
+
+Inside a `test(id, ...)` body the only things that belong inline are:
+- `test.setTimeout(...)` at the top when overriding the 60s default
+- `test.skip(...)` guards for theme/tenant divergence
+- Local aliases (`const auth = customer.pages.auth`)
+- Resolver calls to pick fixtures (`await resolver.event(events.normal)`)
+- Actor / page-object / factory invocations to drive the flow
+- `expect(...)` assertions
+- A closing `feedback(...)` line
+
+Everything else — helper functions, shared setup, ad-hoc selectors, `page.evaluate` blocks, custom waits, DOM parsing — is a smell. If you catch yourself writing a private helper at the top of a spec, extract it to the right layer instead. If two specs need it, that's twice as much reason.
+
+The one narrow exception is the **`validBase()` payload factory** each negative-validation spec defines locally — it's a per-spec vocabulary for "a fully valid submission" that gets partially overridden per test. Keeps the "valid minus one" pattern legible in one file.
+
 ## Rules to write down
 
 - **Every test lives in `specs/registry.json`.** The wrapper enforces this at import time.
@@ -272,3 +297,4 @@ The `──` (U+2500) reads better in a terminal than `-----`. Match the existin
 - **Verify both sides.** Frontend assertions catch UI regressions; DB assertions catch state corruption. Together they catch both.
 - **Clean up in `finally`.** Any test that creates a user / order / row cleans it up unconditionally.
 - **Own your timeout.** Tests that hit gateway sandboxes call `test.setTimeout(...)` explicitly at the top.
+- **No logic in spec files.** Selectors → page objects. Orchestration → actors. Fixtures → factories. Presets → `helpers/presets/`. Specs stay declarative.

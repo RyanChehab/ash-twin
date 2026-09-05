@@ -55,6 +55,7 @@ npm run test:headed                               # headed browser
 - **Clean up in `finally`.** Any test that creates a user, order, or row cleans it up unconditionally.
 - **Own your timeout.** Global per-test is 60s. Gateway sandbox tests call `test.setTimeout(120_000)` (or `180_000` for Tabby) at the top.
 - **No branching on tenant in actors or specs.** Tenant differences live in `pages/web/{theme}/` behind the factory in `pages/web/factory.ts`. Actors and specs stay theme-agnostic.
+- **No logic in spec files.** A spec file hosts `test(id, ...)` bodies and nothing else. Selectors, DOM interaction, waits, and gesture sequences belong in page objects. Business orchestration (login-then-purchase, add-addon-then-checkout) belongs in actors. Fixture seeding belongs in `factories/`. Criteria bundles belong in `helpers/presets/`. If a spec needs a helper, extract it to the right layer — do not define it inline. The only inline code a spec should contain is: a `validBase()` payload for negative-validation tests, `expect(...)` assertions, and a `feedback(...)` line.
 - **Payment keys are strings, not numeric handling IDs.** Use `data-payment-type` (e.g. `'cybersource_unified'`, `'tabby'`). Numeric IDs change per tenant and re-seed.
 - **One strategy per gateway.** Add `payments/{name}.ts`, register in `payments/index.ts`, colocate its `cards` map. Loud failure on unknown key.
 - **Selectors inside gateway iframes use role + accessible name.** Class names shift across SDK versions, ARIA does not. `getByRole('textbox', { name: /card number/i })`.
