@@ -1,6 +1,6 @@
 import {test,expect} from '../../helpers/test'
 import { cards } from '../../payments/cybersource_unified';
-import { events } from '../../helpers/event-presets';
+import { events } from '../../helpers/presets/event';
 import { requireTestCustomer } from '../../helpers/tenant';
 import { identities as tabbyIdentities } from '../../payments/tabby';
 
