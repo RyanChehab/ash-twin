@@ -28,8 +28,13 @@
   { "id": 27, "title": "addon is hidden on the addons page when available online is off" },
   { "id": 28, "title": "addon is hidden on the addons page when addon is unpub" },
   { "id": 29, "title": "addon is hidden on the addons page when all of its categories are web-unpublished" },
-  { "id": 30, "title": "no addon pickers render when the cart's event has no eligible addons" },
-  { "id": 31, "title": "addon renders sold-out when every category is out of stock" },
-  { "id": 32, "title": "addon category_min surfaces as data-min on the picker" },
-  { "id": 33, "title": "addon category_max surfaces as data-max on the picker" }
+  { "id": 30, "title": "addon renders sold-out when every category is out of stock" },
+  { "id": 31, "title": "addon category_min surfaces as data-min on the picker" },
+  { "id": 32, "title": "addon category_max surfaces as data-max on the picker" },
+  { "id": 33, "title": "addon picker with no constraints increments by 1 per click" },
+  { "id": 34, "title": "addon picker with category_min jumps to min on first inc" },
+  { "id": 35, "title": "addon picker with category_max caps qty at max" },
+  { "id": 36, "title": "addon picker with category_multiple_of increments in steps of N" },
+  { "id": 37, "title": "addon picker with min and multiple_of starts at max(min, multipleOf) then steps by multipleOf" },
+  { "id": 38, "title": "addon picker with min equal to max locks qty at exact value" }
 ]

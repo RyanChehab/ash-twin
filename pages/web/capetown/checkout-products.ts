@@ -57,4 +57,73 @@ export class CapetownCheckoutProductsPage extends BasePage {
     if ((await item.count()) === 0) return false;
     return await item.evaluate((el) => el.classList.contains('isSoldout'));
   }
+
+  // ── Cross-theme primitives (structural contract with default) ─────────
+
+  async hasAddon(addonId: number, _addonName: string): Promise<boolean> {
+    return (await this.page.locator(`.product-card[data-product-id="${addonId}"]`).count()) > 0;
+  }
+
+  async isAddonSoldOut(addonId: number, _addonName: string): Promise<boolean> {
+    const card = this.page.locator(`.product-card[data-product-id="${addonId}"]`).first();
+    if ((await card.count()) === 0) return false;
+    // Capetown emits a badge inside the card when the addon is sold out.
+    const badge = card.locator('.sold-out, .badge-sold-out, [class*="soldout" i]');
+    return (await badge.count()) > 0;
+  }
+
+  async readAddonPickerAttr(addonId: number, categoryId: number, attr: string): Promise<string | null> {
+    await this.page.locator(`.product-card[data-product-id="${addonId}"]`).click();
+    const picker = this.page.locator(
+      `.modal-quantity-picker.addon[data-addon-id="${addonId}"][id="${categoryId}"]`,
+    );
+    await picker.waitFor({ state: 'attached', timeout: 5_000 });
+    const value = await picker.getAttribute(attr);
+    await this.page.keyboard.press('Escape');
+    return value;
+  }
+
+  // ── Modal interaction primitives (for min/max/multiple_of behavior tests)
+
+  async openAddonModal(addonId: number): Promise<void> {
+    const card = this.page.locator(`.product-card[data-product-id="${addonId}"]`).first();
+    if ((await card.count()) === 0) return;
+    await card.click();
+    await this.page.locator(
+      `.modal-quantity-picker.addon[data-addon-id="${addonId}"]`,
+    ).first().waitFor({ state: 'visible', timeout: 5_000 });
+    // products.js binds the picker's .inc click handler in fancybox's
+    // afterShow callback — waitFor('visible') can resolve slightly earlier,
+    // leaving the button responsive but unhandled.
+    await this.page.waitForFunction((id) => {
+      const picker = document.querySelector(
+        `.modal-quantity-picker.addon[data-addon-id="${id}"]`,
+      );
+      if (!picker) return false;
+      const inc = picker.querySelector('.inc');
+      if (!inc) return false;
+      // @ts-ignore
+      const events = window.jQuery?._data(inc, 'events');
+      return !!events?.click?.some((e: any) => e.namespace === 'modal');
+    }, addonId, { timeout: 5_000 });
+  }
+
+  async closeAddonModal(): Promise<void> {
+    await this.page.keyboard.press('Escape');
+  }
+
+  async getAddonQty(addonId: number, categoryId: number): Promise<number> {
+    const input = this.page.locator(
+      `.modal-quantity-picker.addon[data-addon-id="${addonId}"][id="${categoryId}"] input[name="fakeplaces"]`,
+    ).first();
+    const val = await input.inputValue();
+    return parseInt(val, 10) || 0;
+  }
+
+  async incAddon(addonId: number, categoryId: number, times = 1): Promise<void> {
+    const inc = this.page.locator(
+      `.modal-quantity-picker.addon[data-addon-id="${addonId}"][id="${categoryId}"] .inc`,
+    ).first();
+    for (let i = 0; i < times; i++) await inc.click();
+  }
 }

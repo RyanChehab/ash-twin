@@ -99,7 +99,7 @@ export class Resolver {
   /**
    * Translate an `EventCriteria` into a WHERE clause. The resolver has no
    * defaults — every predicate is gated on a criterion being set explicitly.
-   * Curated preset combinations live in `helpers/event-presets.ts` so tests
+   * Curated preset combinations live in `helpers/presets/event.ts` so tests
    * can reference `events.normal`, `events.presale`, etc. instead of hand-
    * rolling criteria at each call site.
    */
